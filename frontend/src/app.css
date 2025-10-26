@@ -1,0 +1,21 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-brand-primary: #fd4a04;
+
+  --font-unbounded: Unbounded, sans-serif;
+}
+
+@layer components {
+  .button-primary {
+    @apply block bg-brand-primary cursor-pointer px-5 py-2 text-white rounded-xl hover:bg-orange-600;
+  }
+
+  .button {
+    @apply block bg-white cursor-pointer px-5 py-2 text-black rounded-xl hover:bg-gray-200;
+  }
+
+  .input {
+    @apply bg-white px-5 py-2 text-black rounded-xl outline-brand-primary outline-0 focus:outline-2;
+  }
+}

@@ -1,0 +1,22 @@
+services:
+  db:
+    image: "postgres:18"
+    restart: always
+    user: postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: pupsiks
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - dbdata:/var/lib/postgresql/data:z
+    ports:
+      - "5432:5432" # For developement
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d pupsiks"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  dbdata:
