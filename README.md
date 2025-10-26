@@ -3,9 +3,9 @@ The revolutional platform for the cutest people of Ukraine made with love.
 
 ## Technologies
 - Frontend:
--- SvelteKit
+- - SvelteKit
 - Backend:
--- Actix
--- SeaORM
+- - Actix
+- - SeaORM
 - DB:
--- PostgreSQL
+- - PostgreSQL
