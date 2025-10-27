@@ -1,16 +1,20 @@
-# Currently in pre public state
+# Currently in pre-public state
 ## To-Do:
 - [ ] Make API backend endpoints
-- [ ] Make email confirmation code sending
+- - [x] Get certificate endpoint
+- - [ ] Stats endpoint
+- - [ ] Email confirmation code sending endpoint (+redis)
+- - [ ] Create certificate endpoint
+- - [ ] Remove certificate endpoint
 - [ ] Connect frontend and backend
 - [ ] Make skeleton
 - [ ] Separate components on svelte files
 - [ ] Turn backend and frontend into Docker services
-- [ ] Remove .env
+- [ ] Make .env disappear (.gitignore magic)
 - [ ] Refactor the code, add comments
 - [ ] Make a great README.md
 - [ ] Remove all commits
-- [ ] Publish a project
+- [ ] Publish the project
 
 # Association pupsiks of Ukraine
 The revolutional platform for the cutest people of Ukraine made with love.

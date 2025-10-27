@@ -2,7 +2,7 @@ use actix_web::{http::StatusCode, web, HttpResponse, Responder, Scope};
 use crate::types::errors::Errors;
 
 async fn not_found() -> Result<(), Errors> {
-    Err(Errors::NotFound { 
+    Err(Errors::PageNotFound { 
         endpoints: Some(&[
             ("GET", "/api/v1/stats/users_count"),
         ])

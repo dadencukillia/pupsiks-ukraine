@@ -8,6 +8,9 @@ mod api_v1;
 mod models;
 mod types;
 
+#[cfg(test)]
+mod tests;
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(
@@ -28,7 +31,8 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(db.clone()))
             .service(api_v1::api_v1_scope())
 
-    }).bind(("0.0.0.0", 8080))?
+    })
+        .bind(("0.0.0.0", 8080))?
         .run()
         .await
 }

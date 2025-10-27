@@ -9,7 +9,7 @@ mod code_confirmation;
 mod stats;
 
 async fn not_found() -> Result<(), Errors> {
-    Err(Errors::NotFound { 
+    Err(Errors::PageNotFound { 
         endpoints: Some(&[
             ("GET", "/api/v1/cert/{uuid}"),
             ("POST", "/api/v1/cert"),

@@ -1,20 +1,40 @@
 use actix_web::{body::{BoxBody, MessageBody}, error, http::{header::ContentType, StatusCode}, web::{self, Json}, HttpResponse, HttpResponseBuilder, Responder};
 use derive_more::derive::{Display, Error};
 
-use crate::types::responses::NotFoundErrorResponse;
+use crate::types::responses::{BadRequestErrorResponse, InternalServerErrorResponse, PageNotFoundErrorResponse, ResourceNotFoundErrorResponse};
 
 #[derive(Debug, Display, Error)]
 pub enum Errors {
     #[display("Page not found")]
-    NotFound {
+    PageNotFound {
         endpoints: Option<&'static [(&'static str, &'static str)]>
+    },
+
+    #[display("Wrong request: invalid {what_invalid}")]
+    BadRequest {
+        what_invalid: &'static str
+    },
+
+    #[display("Resource not found: {what} not found")]
+    ResourceNotFound {
+        what: &'static str
+    },
+
+    #[display("Something went wrong with {what}")]
+    InternalServer {
+        what: &'static str
     }
 }
 
 impl Errors {
     fn get_response_body(&self) -> BoxBody {
         match self {
-            Self::NotFound { endpoints } => BoxBody::new(serde_json::to_string(&NotFoundErrorResponse::from(*endpoints)).unwrap())
+            Self::PageNotFound { endpoints } => BoxBody::new(serde_json::to_string(&PageNotFoundErrorResponse::new(
+                endpoints.map_or(None, |a| Some(PageNotFoundErrorResponse::endpoints_to_vec(a)))
+            )).unwrap()),
+            Self::BadRequest { what_invalid } => BoxBody::new(serde_json::to_string(&BadRequestErrorResponse::new(what_invalid)).unwrap()),
+            Self::ResourceNotFound { what } => BoxBody::new(serde_json::to_string(&ResourceNotFoundErrorResponse::new(what)).unwrap()),
+            Self::InternalServer { what } => BoxBody::new(serde_json::to_string(&InternalServerErrorResponse::new(what)).unwrap())
         }
     }
 }
@@ -22,7 +42,10 @@ impl Errors {
 impl error::ResponseError for Errors {
     fn status_code(&self) -> StatusCode {
         match self {
-            Self::NotFound { endpoints: _ } => StatusCode::NOT_FOUND,
+            Self::PageNotFound { endpoints: _ } => StatusCode::NOT_FOUND,
+            Self::BadRequest { what_invalid: _ } => StatusCode::BAD_REQUEST,
+            Self::ResourceNotFound { what: _ } => StatusCode::NOT_FOUND,
+            Self::InternalServer { what: _ } => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
