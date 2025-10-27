@@ -1,0 +1,9 @@
+[project]
+name = "email-worker"
+version = "0.0.1"
+description = "The service to send emails code"
+requires-python = ">=3.13"
+dependencies = [
+    "python-dotenv>=1.2.1",
+    "redis>=7.0.0",
+]

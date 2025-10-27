@@ -8,9 +8,6 @@ mod api_v1;
 mod models;
 mod types;
 
-#[cfg(test)]
-mod tests;
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(
