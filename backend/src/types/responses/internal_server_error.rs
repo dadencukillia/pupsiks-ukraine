@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::types::errors::Errors;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 pub struct InternalServerErrorResponse {
     pub message: String,
 }

@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::types::errors::Errors;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 pub struct PageNotFoundErrorResponse {
     pub message: String,
     pub endpoints: Option<Vec<String>>,

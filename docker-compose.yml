@@ -1,11 +1,12 @@
 services:
   emailworker:
-    build: ./email_worker
+    build: ./emailworker
     restart: always
     environment:
       EMAIL_QUEUE: ${EMAIL_QUEUE}
       SMTP_SERVER: ${SMTP_SERVER}
       SMTP_PORT: ${SMTP_PORT}
+      SMTP_SENDER: ${SMTP_SENDER}
       SMTP_USERNAME: ${SMTP_USERNAME}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
     depends_on:

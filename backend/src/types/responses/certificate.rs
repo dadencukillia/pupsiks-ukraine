@@ -2,7 +2,7 @@ use sea_orm::prelude::Uuid;
 use serde::{Deserialize, Serialize};
 use short_uuid::ShortUuid;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 pub struct CertificateResponse {
     pub message: String,
     pub id: String,

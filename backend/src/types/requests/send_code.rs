@@ -3,15 +3,24 @@ use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub enum SendCodePurposes {
-    #[serde(rename = "creation")]
+    #[serde(rename = "create")]
     ConfirmCreation,
-    #[serde(rename = "deletion")]
+    #[serde(rename = "delete")]
     ConfirmDeletion,
 }
 
-#[derive(Serialize, Deserialize, Validate)]
+impl ToString for SendCodePurposes {
+    fn to_string(&self) -> String {
+        match self {
+            &Self::ConfirmCreation => "create".to_string(),
+            &Self::ConfirmDeletion => "delete".to_string()
+        }
+    }
+}
+
+#[derive(Deserialize, Validate)]
 pub struct SendCodeRequest {
-    purpose: SendCodePurposes,
+    pub purpose: SendCodePurposes,
     #[validate(email)]
-    email: String
+    pub email: String
 }

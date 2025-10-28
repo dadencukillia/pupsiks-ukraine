@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use crate::types::errors::Errors;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 pub struct BadRequestErrorResponse {
     pub message: String,
 }
