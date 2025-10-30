@@ -6,15 +6,6 @@ import (
 )
 
 func main() {
-	err := SendMail("dadencukillia@gmail.com", "forgot_cert", map[string]string{
-		"CERTURL": "https://google.com",
-	})
-	if err != nil {
-		fmt.Printf("%s\n", err)
-		return
-	}
-	fmt.Println("[✅] Successfuly sended to dadencukillia@gmail.com")
-
 	conn := ConnectRedis()
 	taskChannel := make(chan EmailTask)
 
@@ -37,6 +28,8 @@ func main() {
 
 func worker(tasks chan EmailTask) {
 	for task := range tasks {
+		retriesLeft := uint(5)
+
 		for {
 			templateName := TemplateNameByPurpose(task.Purpose)
 			if templateName == "" {
@@ -51,8 +44,15 @@ func worker(tasks chan EmailTask) {
 			)
 			if err != nil {
 				fmt.Printf("%s\n", err)
-				fmt.Println("[🔃] Next retry in 5 seconds...")
-				time.Sleep(5 * time.Second)
+
+				if retriesLeft > 0 {
+					fmt.Println("[🔃] Next retry in 5 seconds...")
+					time.Sleep(5 * time.Second)
+					retriesLeft -= 1
+				} else {
+					fmt.Printf("[❌] Skipping email %s\n", task.Email)
+					break
+				}
 
 				continue
 			}

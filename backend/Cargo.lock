@@ -337,6 +337,7 @@ dependencies = [
  "env_logger",
  "fred",
  "log",
+ "rand 0.8.5",
  "sea-orm",
  "serde",
  "serde_json",

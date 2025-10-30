@@ -1,5 +1,9 @@
+use std::sync::Arc;
+
 use actix_web::{http::StatusCode, web, HttpResponse, Responder, Scope};
-use crate::types::errors::Errors;
+use fred::prelude::{Client, FredResult, KeysInterface};
+use sea_orm::{DatabaseConnection, EntityTrait, PaginatorTrait};
+use crate::{models::cert, types::{errors::Errors, responses::StatsUserCountResponse}};
 
 async fn not_found() -> Result<(), Errors> {
     Err(Errors::PageNotFound { 
@@ -10,8 +14,31 @@ async fn not_found() -> Result<(), Errors> {
 }
 
 #[actix_web::get("/users_count")]
-pub async fn users_count_endpoint() -> impl Responder {
-    "0"
+pub async fn users_count_endpoint(
+    db: web::Data<DatabaseConnection>,
+    redis: web::Data<Arc<Client>>
+) -> Result<web::Json<StatsUserCountResponse>, Errors> {
+    if let Ok(Some(cache_data)) = redis
+        .get::<Option<u64>, _>("stats:users_count")
+        .await {
+
+        return Ok(web::Json(
+            StatsUserCountResponse::new(cache_data)
+        ));
+    }
+
+    let users_count = cert::Entity::find()
+        .count(db.as_ref())
+        .await
+        .map_err(|_| Errors::InternalServer { what: "DB" })?;
+
+    let _: FredResult<Option<u64>> = redis
+        .set("stats:users_count", users_count, None, None, false)
+        .await;
+
+    Ok(web::Json(
+        StatsUserCountResponse::new(users_count)
+    ))
 }
 
 pub fn stats_scope() -> Scope {

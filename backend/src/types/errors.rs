@@ -1,7 +1,7 @@
 use actix_web::{body::{BoxBody, MessageBody}, error, http::{header::ContentType, StatusCode}, web::{self, Json}, HttpResponse, HttpResponseBuilder, Responder};
 use derive_more::derive::{Display, Error};
 
-use crate::types::responses::{BadRequestErrorResponse, EmailRateLimitErrorResponse, InternalServerErrorResponse, PageNotFoundErrorResponse, ResourceNotFoundErrorResponse};
+use crate::types::responses::{BadRequestErrorResponse, EmailRateLimitErrorResponse, IPRateLimitErrorResponse, InternalServerErrorResponse, PageNotFoundErrorResponse, ResourceNotFoundErrorResponse};
 
 #[derive(Debug, Display, Error)]
 pub enum Errors {
@@ -29,6 +29,12 @@ pub enum Errors {
     EmailRateLimit {
         how_much: u32,
         timestamp: u32
+    },
+
+    #[display("IP rate limit hit. Retry in {how_much}s.")]
+    IPRateLimit {
+        how_much: u32,
+        timestamp: u32
     }
 }
 
@@ -41,7 +47,8 @@ impl Errors {
             Self::BadRequest { what_invalid } => BoxBody::new(serde_json::to_string(&BadRequestErrorResponse::new(what_invalid)).unwrap()),
             Self::ResourceNotFound { what } => BoxBody::new(serde_json::to_string(&ResourceNotFoundErrorResponse::new(what)).unwrap()),
             Self::InternalServer { what } => BoxBody::new(serde_json::to_string(&InternalServerErrorResponse::new(what)).unwrap()),
-            Self::EmailRateLimit { how_much, timestamp } => BoxBody::new(serde_json::to_string(&EmailRateLimitErrorResponse::new(*how_much, *timestamp)).unwrap())
+            Self::EmailRateLimit { how_much, timestamp } => BoxBody::new(serde_json::to_string(&EmailRateLimitErrorResponse::new(*how_much, *timestamp)).unwrap()),
+            Self::IPRateLimit { how_much, timestamp } => BoxBody::new(serde_json::to_string(&IPRateLimitErrorResponse::new(*how_much, *timestamp)).unwrap()),
         }
     }
 }
@@ -54,6 +61,7 @@ impl error::ResponseError for Errors {
             Self::ResourceNotFound { what: _ } => StatusCode::NOT_FOUND,
             Self::InternalServer { what: _ } => StatusCode::INTERNAL_SERVER_ERROR,
             Self::EmailRateLimit { how_much: _, timestamp: _ } => StatusCode::TOO_MANY_REQUESTS,
+            Self::IPRateLimit { how_much: _, timestamp: _ } => StatusCode::TOO_MANY_REQUESTS,
         }
     }
 

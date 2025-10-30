@@ -2,8 +2,8 @@
 ## To-Do:
 - [ ] Make API backend endpoints
 - - [x] Get certificate endpoint
-- - [ ] Stats endpoint
-- - [ ] Email confirmation code sending endpoint (+redis)
+- - [x] Stats endpoint
+- - [x] Email confirmation code sending endpoint (+redis)
 - - [ ] Create certificate endpoint
 - - [ ] Remove certificate endpoint
 - [ ] Connect frontend and backend
@@ -27,3 +27,6 @@ The revolutional platform for the cutest people of Ukraine made with love.
 - - SeaORM
 - DB:
 - - PostgreSQL
+- Also:
+- - Redis
+- - SMTP with Golang

@@ -10,6 +10,7 @@ mod configs;
 mod api_v1;
 mod models;
 mod types;
+mod utils;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
