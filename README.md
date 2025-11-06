@@ -4,7 +4,7 @@
 - - [x] Get certificate endpoint
 - - [x] Stats endpoint
 - - [x] Email confirmation code sending endpoint (+redis)
-- - [ ] Create certificate endpoint
+- - [x] Create certificate endpoint
 - - [ ] Remove certificate endpoint
 - [ ] Connect frontend and backend
 - [ ] Make skeleton

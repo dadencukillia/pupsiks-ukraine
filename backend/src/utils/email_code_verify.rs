@@ -7,7 +7,7 @@ use crate::utils::code_validations::{validate_email_code, validate_email_token};
 pub enum VerificationResult {
     Ok { purpose: String },
     NotFound,
-    AnotherToken,
+    InvalidToken,
     InvalidCode,
     UnknownError(Box<dyn Error>)
 }
@@ -20,7 +20,7 @@ pub async fn verify_email_code(
         return VerificationResult::InvalidCode;
     }
 
-    let key = format!("confirmcode:{}", email);
+    let key = format!("confirm_code:{}", email);
 
     let redis_code_data: Option<String> = match redis
         .get(&key)
@@ -57,7 +57,7 @@ pub async fn verify_email_code(
             };
 
             if redis_token != token {
-                return VerificationResult::AnotherToken;
+                return VerificationResult::InvalidToken;
             }
 
             if redis_code != code {

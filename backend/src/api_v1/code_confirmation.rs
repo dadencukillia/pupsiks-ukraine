@@ -2,10 +2,10 @@ use std::{collections::HashMap, sync::Arc};
 
 use actix_web::{web, Error, HttpRequest, Responder};
 use chrono::{Duration, Utc};
-use fred::{prelude::{Client, FredResult, HashesInterface, KeysInterface, ListInterface}, types::{Expiration, SetOptions}};
+use fred::{prelude::{Client, FredResult, HashesInterface, KeysInterface, ListInterface, TransactionInterface}, types::{Expiration, SetOptions, Value}};
 use validator::Validate;
 
-use crate::{configs, types::{errors::Errors, redis::EmailTask, requests::{SendCodePurposes, SendCodeRequest}, responses::CodeSentResponse}, utils::code_generator::{generate_code_token, generate_email_code}};
+use crate::{configs, types::{errors::Errors, redis::EmailTask, requests::{SendCodePurposes, SendCodeRequest}, responses::success::CodeSentResponse}, utils::{code_generator::{generate_code_token, generate_email_code}, log_error::ResultLogger}};
 
 #[actix_web::post("/send_code")]
 pub async fn send_code_endpoint(
@@ -13,14 +13,18 @@ pub async fn send_code_endpoint(
     body: Result<web::Json<SendCodeRequest>, Error>,
     redis: web::Data<Arc<Client>>
 ) -> Result<web::Json<CodeSentResponse>, Errors> {
-    match body {
+    let place_name = "POST /api/v1/send_code";
+
+    match body.log_with_place_on_error(place_name) {
         Ok(body) => {
-            // Check if email address is correct
-            if body.validate().is_err() {
+            // Checking if email address is correct
+            if body.validate()
+                .log_with_place_on_error(place_name)
+                .is_err() {
                 return Err(Errors::BadRequest { what_invalid: "email field value" });
             }
 
-            // Rate limits redis keys
+            // Assigning keys for Redis rate limits
             let addr_limit_key = format!("code_rate_limit:email:{}", body.email);
             let users_ip = match request.connection_info().realip_remote_addr() {
                 Some(ip) => ip.to_string(),
@@ -30,7 +34,7 @@ pub async fn send_code_endpoint(
             };
             let ip_limit_key = format!("code_rate_limit:ip:{}", users_ip);
 
-            // Check rate limit by ip address
+            // Checking rate limit by IP address
             {
                 let result: i64 = redis
                     .get(&ip_limit_key)
@@ -40,22 +44,24 @@ pub async fn send_code_endpoint(
                 if result > 5 {
                     let exp_time: i64 = redis.pttl(&ip_limit_key)
                         .await
+                        .log_with_place_on_error(place_name)
                         .map_err(|_| Errors::InternalServer { what: "cache storage" })?;
 
                     let timestamp = (Utc::now() + Duration::milliseconds(exp_time)).timestamp();
 
                     return Err(Errors::IPRateLimit { 
                         how_much: (exp_time as u32) / 1000, 
-                        timestamp: timestamp as u32
+                        timestamp: timestamp as u64
                     })
                 }
             }
 
-            // Check and update rate limit by email address (1 code in 3 minute)
+            // Checking and updating rate limit by email address (1 code in 3 minute)
             {
                 let rate_result: Option<String> = redis
                     .set(&addr_limit_key, "1", Some(Expiration::EX(3 * 60)), Some(SetOptions::NX), false)
                     .await
+                    .log_with_place_on_error(place_name)
                     .map_err(|_| Errors::InternalServer { what: "cache storage" })?;
 
                 match rate_result {
@@ -63,36 +69,54 @@ pub async fn send_code_endpoint(
                     None => {
                         let exp_time: i64 = redis.pttl(&addr_limit_key)
                             .await
+                            .log_with_place_on_error(place_name)
                             .map_err(|_| Errors::InternalServer { what: "cache storage" })?;
 
                         let timestamp = (Utc::now() + Duration::milliseconds(exp_time)).timestamp();
 
                         return Err(Errors::EmailRateLimit { 
                             how_much: (exp_time as u32) / 1000, 
-                            timestamp: timestamp as u32 
+                            timestamp: timestamp as u64
                         });
                     }
                 };
             }
 
-            // Update rate limit by ip address (5 codes in 10 minutes)
+            // Updating rate limit by IP address (5 codes in 10 minutes)
             {
-                let _: i64 = redis
+                let pipeline = redis.multi();
+
+                let result: Value = pipeline
                     .incr(&ip_limit_key)
                     .await
+                    .log_with_place_on_error(place_name)
                     .map_err(|_| Errors::InternalServer { what: "cache storage" })?;
 
-                let _: u8 = redis.expire(&ip_limit_key, 10 * 60, None)
+                if !result.is_queued() {
+                    return Err(Errors::InternalServer { what: "cache storage" });
+                }
+
+                let result: Value = pipeline
+                    .expire(&ip_limit_key, 10 * 60, None)
+                    .await
+                    .log_with_place_on_error(place_name)
+                    .map_err(|_| Errors::InternalServer { what: "cache storage" })?;
+
+                if !result.is_queued() {
+                    return Err(Errors::InternalServer { what: "cache storage" });
+                }
+
+                let _: (i64, u8) = pipeline.exec(true)
                     .await
                     .map_err(|_| Errors::InternalServer { what: "cache storage" })?;
             }
 
-            // Generate code and token
+            // Generating code and token
             let email_code = generate_email_code();
             let email_token = generate_code_token();
 
             // Saving email code and token into storage for a day
-            let key = format!("confirmcode:{}", body.email);
+            let key = format!("confirm_code:{}", body.email);
             let value = format!("{}:{}:{}", email_token, email_code, body.purpose.to_string());
 
             let expire_time = Utc::now() + Duration::seconds(24 * 60 * 60);
@@ -100,9 +124,10 @@ pub async fn send_code_endpoint(
             let _: Option<String> = redis
                 .set(&key, &value, Some(Expiration::EXAT(expire_time.timestamp())), None, false)
                 .await
+                .log_with_place_on_error(place_name)
                 .map_err(|_| Errors::InternalServer { what: "cache storage" })?;
 
-            // Add email task into queue to be processed by a SMTP service
+            // Adding email task into queue to be processed by a SMTP service
             let mut replacements = HashMap::new();
             replacements.insert("CERTCODE".to_string(), email_code);
 
@@ -112,6 +137,7 @@ pub async fn send_code_endpoint(
                 replacements: replacements,
             }).unwrap())
                 .await
+                .log_with_place_on_error(place_name)
                 .map_err(|_| Errors::InternalServer { what: "broker" })?;
 
             // Success

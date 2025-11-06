@@ -4,6 +4,7 @@ use crate::types::errors::Errors;
 
 #[derive(Serialize)]
 pub struct PageNotFoundErrorResponse {
+    pub code_error: String,
     pub message: String,
     pub endpoints: Option<Vec<String>>,
 }
@@ -11,6 +12,7 @@ pub struct PageNotFoundErrorResponse {
 impl PageNotFoundErrorResponse {
     pub fn new(endpoints: Option<Vec<String>>) -> Self {
         Self { 
+            code_error: "page_not_found".to_string(),
             message: Errors::PageNotFound { endpoints: None }.to_string(), 
             endpoints: endpoints
         }
