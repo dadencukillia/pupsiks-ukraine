@@ -5,7 +5,8 @@
 - - [x] Stats endpoint
 - - [x] Email confirmation code sending endpoint (+redis)
 - - [x] Create certificate endpoint
-- - [ ] Remove certificate endpoint
+- - [x] Remove certificate endpoint
+- - [x] Forgot certificate endpoint
 - [ ] Connect frontend and backend
 - [ ] Make skeleton
 - [ ] Separate components on svelte files

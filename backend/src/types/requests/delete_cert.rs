@@ -4,25 +4,19 @@ use validator::Validate;
 use crate::utils::{code_validations::{validate_email_code, validate_email_token}, smart_trim::smart_trim};
 
 #[derive(Deserialize, Validate, Debug)]
-pub struct CreateCertRequest {
+pub struct DeleteCertRequest {
     #[validate(email)]
     pub email: String,
-    #[validate(length(min = 5))]
-    pub title: String,
-    #[validate(length(min = 1))]
-    pub name: String,
     #[validate(custom(function = "validate_email_code"))]
     pub code: String,
     #[validate(custom(function = "validate_email_token"))]
     pub token: String
 }
 
-impl CreateCertRequest {
+impl DeleteCertRequest {
     pub fn trim(&self) -> Self {
         Self {
             email: smart_trim(&self.email),
-            title: smart_trim(&self.title),
-            name: smart_trim(&self.name),
             code: smart_trim(&self.code),
             token: smart_trim(&self.token),
         }

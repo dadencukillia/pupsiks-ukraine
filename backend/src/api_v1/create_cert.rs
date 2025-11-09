@@ -74,7 +74,6 @@ pub async fn create_cert_endpoint(
                             } else {
                                 return Err(Errors::InternalServer { what: "DB" });
                             }
-
                         },
                     };
 

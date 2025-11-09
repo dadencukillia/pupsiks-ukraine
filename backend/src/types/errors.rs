@@ -1,7 +1,7 @@
 use actix_web::{body::{BoxBody, MessageBody}, error, http::{header::ContentType, StatusCode}, web::{self, Json}, HttpResponse, HttpResponseBuilder, Responder};
 use derive_more::derive::{Display, Error};
 
-use crate::types::responses::fail::{AlreadyExistsErrorResponse, BadRequestErrorResponse, EmailRateLimitErrorResponse, IPRateLimitErrorResponse, InternalServerErrorResponse, InvalidCodeErrorResponse, InvalidRouteErrorResponse, InvalidTokenErrorResponse, PageNotFoundErrorResponse, ResourceNotFoundErrorResponse, TriesOutErrorResponse};
+use crate::types::responses::fail::{AlreadyExistsErrorResponse, BadRequestErrorResponse, EmailRateLimitErrorResponse, IPRateLimitErrorResponse, InternalServerErrorResponse, InvalidCodeErrorResponse, InvalidEmailErrorResponse, InvalidRouteErrorResponse, InvalidTokenErrorResponse, PageNotFoundErrorResponse, ResourceNotFoundErrorResponse, TriesOutErrorResponse};
 
 #[derive(Debug, Display, Error)]
 pub enum Errors {
@@ -57,7 +57,10 @@ pub enum Errors {
     TriesOut {
         how_much: u32,
         timestamp: u64
-    }
+    },
+
+    #[display("Invalid email")]
+    InvalidEmail
 }
 
 impl Errors {
@@ -76,6 +79,7 @@ impl Errors {
             Self::InvalidToken => BoxBody::new(serde_json::to_string(&InvalidTokenErrorResponse::new()).unwrap()),
             Self::AlreadyExists { what } => BoxBody::new(serde_json::to_string(&AlreadyExistsErrorResponse::new(what)).unwrap()),
             Self::TriesOut { how_much, timestamp } => BoxBody::new(serde_json::to_string(&TriesOutErrorResponse::new(*how_much, *timestamp)).unwrap()),
+            Self::InvalidEmail => BoxBody::new(serde_json::to_string(&InvalidEmailErrorResponse::new()).unwrap())
         }
     }
 }
@@ -94,6 +98,7 @@ impl error::ResponseError for Errors {
             Self::InvalidToken => StatusCode::BAD_REQUEST,
             Self::AlreadyExists { .. } => StatusCode::CONFLICT,
             Self::TriesOut { .. } => StatusCode::TOO_MANY_REQUESTS,
+            Self::InvalidEmail { .. } => StatusCode::BAD_REQUEST,
         }
     }
 

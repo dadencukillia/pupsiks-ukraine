@@ -3,20 +3,24 @@ use std::{collections::HashMap, sync::Arc};
 use actix_web::{web, Error, HttpRequest, Responder};
 use chrono::{Duration, Utc};
 use fred::{prelude::{Client, FredResult, HashesInterface, KeysInterface, ListInterface, TransactionInterface}, types::{Expiration, SetOptions, Value}};
+use sea_orm::{ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect};
 use validator::Validate;
 
-use crate::{configs, types::{errors::Errors, redis::EmailTask, requests::{SendCodePurposes, SendCodeRequest}, responses::success::CodeSentResponse}, utils::{code_generator::{generate_code_token, generate_email_code}, log_error::ResultLogger}};
+use crate::{configs, models::cert, types::{errors::Errors, redis::EmailTask, requests::{SendCodePurposes, SendCodeRequest}, responses::success::CodeSentResponse}, utils::{code_generator::{generate_code_token, generate_email_code}, log_error::ResultLogger, uuid::get_uuid}};
 
 #[actix_web::post("/send_code")]
 pub async fn send_code_endpoint(
     request: HttpRequest,
     body: Result<web::Json<SendCodeRequest>, Error>,
-    redis: web::Data<Arc<Client>>
+    redis: web::Data<Arc<Client>>,
+    db: web::Data<DatabaseConnection>
 ) -> Result<web::Json<CodeSentResponse>, Errors> {
     let place_name = "POST /api/v1/send_code";
 
     match body.log_with_place_on_error(place_name) {
-        Ok(body) => {
+        Ok(body_unclear) => {
+            let body = body_unclear.trim();
+
             // Checking if email address is correct
             if body.validate()
                 .log_with_place_on_error(place_name)
@@ -24,15 +28,49 @@ pub async fn send_code_endpoint(
                 return Err(Errors::BadRequest { what_invalid: "email field value" });
             }
 
+            // Check special cases
+            match body.purpose {
+                SendCodePurposes::ConfirmCreation => {
+                    let cert_to_check = cert::Entity::find_by_email(body.email.to_string())
+                        .one(db.as_ref())
+                        .await
+                        .log_with_place_on_error(place_name)
+                        .map_err(|_| Errors::InternalServer { what: "DB" })?;
+
+                    if cert_to_check.is_some() {
+                        return Err(Errors::AlreadyExists { what: "certificate with this email" });
+                    }
+                },
+                SendCodePurposes::ConfirmDeletion { ref id } => {
+                    let id = if let Some(id) = get_uuid(id) {
+                        id
+                    } else {
+                        return Err(Errors::BadRequest { what_invalid: "id field value" });
+                    };
+
+                    let cert_to_check = cert::Entity::find()
+                        .filter(cert::Column::Email.eq(body.email.to_string()))
+                        .filter(cert::Column::Id.eq(id))
+                        .one(db.as_ref())
+                        .await
+                        .log_with_place_on_error(place_name)
+                        .map_err(|_| Errors::InternalServer { what: "DB" })?;
+
+                    if cert_to_check.is_none() {
+                        return Err(Errors::InvalidEmail);
+                    }
+                }
+            };
+
             // Assigning keys for Redis rate limits
             let addr_limit_key = format!("code_rate_limit:email:{}", body.email);
-            let users_ip = match request.connection_info().realip_remote_addr() {
+            let user_ip = match request.connection_info().realip_remote_addr() {
                 Some(ip) => ip.to_string(),
                 None => {
                     return Err(Errors::InternalServer { what: "IP address" });
                 },
             };
-            let ip_limit_key = format!("code_rate_limit:ip:{}", users_ip);
+            let ip_limit_key = format!("code_rate_limit:ip:{}", user_ip);
 
             // Checking rate limit by IP address
             {

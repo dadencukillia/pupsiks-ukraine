@@ -9,6 +9,7 @@ mod invalid_code;
 mod invalid_token;
 mod already_exists;
 mod tries_out;
+mod invalid_email;
 
 pub use bad_request::*;
 pub use email_rate_limit::*;
@@ -21,3 +22,4 @@ pub use invalid_code::*;
 pub use invalid_token::*;
 pub use already_exists::*;
 pub use tries_out::*;
+pub use invalid_email::*;
