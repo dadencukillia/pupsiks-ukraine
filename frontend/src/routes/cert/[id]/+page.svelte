@@ -4,6 +4,9 @@
   import Modals from "$lib/components/modals.svelte";
   import DeleteCertModal from "$lib/components/modals/deleteCert.svelte";
   import voidPantograph from "$lib/assets/void.jpg";
+    import { onMount } from "svelte";
+    import { getCert } from "$lib/api/requests/cert_crud.js";
+    import Skeleton from "$lib/components/pages/certInfo/skeleton.svelte";
 
   const {
     data
@@ -12,11 +15,9 @@
   let certInfo: {
     name: string,
     title: string,
-  } | null = $state({
-    name: "Illia Diadenchuk Sergiyovich",
-    title: "Admin",
-  });
+  } | null = $state(null);
 
+  // Modals
   let areModalsDismissable = $state(true);
   let isDeleteCertModalShown: boolean = $state(false);
   const dismissModal = () => {
@@ -25,6 +26,7 @@
     if (isDeleteCertModalShown) return isDeleteCertModalShown = false;
   };
 
+  // Buttons event listeners
   const shareTelegram = () => {
     window.open(`https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent("Я офіційно став пупсіком! Ось мій сертифікат ⬆️")}`, "_blank")?.focus();
   };
@@ -32,6 +34,22 @@
   const deleteCert = () => {
     isDeleteCertModalShown = true;
   };
+
+  // API
+  onMount(() => {
+    getCert(data.certId, {
+      onSuccess: (data) => {
+        certInfo = {
+          name: data.name,
+          title: data.title
+        }
+      },
+      onError: (codeError, message, data) => {
+        console.log(codeError, message);
+      },
+      onFatal: (error) => {}
+    });
+  });
 </script>
 
 <svelte:head>
@@ -52,6 +70,7 @@
 </Modals>
 
 <main class="sm:px-20 px-3 pb-10" transition:slide>
+  {#if certInfo}
   <h1 class="font-unbounded mb-10">Сертифікат пупсіка</h1>
   <div class="w-full flex flex-col md:flex-row gap-12 justify-between">
     <div
@@ -76,11 +95,14 @@
         <span class="hidden md:inline text-black">Поділитись Telegram</span>
       </button>
       <button class="button p-1 md:p-2 aspect-square md:aspect-auto text-brand-primary flex flex-row items-center gap-3" onclick={deleteCert}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="24" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
           <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528M8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5"/>
         </svg>
         <span class="hidden md:inline text-black">Видалити сертифікат</span>
       </button>
     </div>
   </div>
+  {:else}
+  <Skeleton />
+  {/if}
 </main>

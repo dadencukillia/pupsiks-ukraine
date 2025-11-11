@@ -1,5 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
+use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use env_logger::Env;
 use fred::prelude::*;
@@ -40,9 +41,11 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         let logger = Logger::default();
+        let cors = Cors::permissive();
 
         App::new()
             .wrap(logger)
+            .wrap(cors)
             .app_data(web::Data::new(db.clone()))
             .app_data(web::Data::new(redis_clone.clone()))
             .service(api_v1::api_v1_scope())

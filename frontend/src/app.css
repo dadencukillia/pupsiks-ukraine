@@ -18,4 +18,25 @@
   .input {
     @apply bg-white px-5 py-2 text-black rounded-xl outline-brand-primary outline-0 focus:outline-2;
   }
+
+  .skeleton {
+    @apply bg-[#d0cece] rounded-md;
+      background: linear-gradient(
+      90deg,
+      #EDEDED 30%,
+      #DCDCDC 50%,
+      #EDEDED 70%
+    );
+    background-size: 400%;
+    animation: shimmer 1.5s infinite linear;
+  }
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: 100% 100%;
+	}
+	100% {
+		background-position: 0 0;
+	}
 }

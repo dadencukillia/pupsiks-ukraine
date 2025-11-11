@@ -12,7 +12,7 @@ pub struct TriesOutErrorResponse {
 impl TriesOutErrorResponse {
     pub fn new(how_much: u32, timestamp: u64) -> Self {
         Self {
-            code_error: "tries_over".to_string(),
+            code_error: "tries_out".to_string(),
             message: Errors::TriesOut { how_much, timestamp }.to_string(),
             timestamp
         }

@@ -16,3 +16,4 @@ validator = { version = "0.20.0", features = ["derive"] }
 fred = "10.1.0"
 chrono = "0.4.42"
 rand = "0.8"
+actix-cors = "0.7.1"

@@ -1,21 +1,40 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
 
-  import heroImgSm from "$lib/assets/hero-small.jpg";
-  import heroImgMd from "$lib/assets/hero-medium.jpg";
-  import heroImgLg from "$lib/assets/hero-large.jpg";
+  import heroImgSm from "$lib/assets/heroSmall.jpg";
+  import heroImgMd from "$lib/assets/heroMedium.jpg";
+  import heroImgLg from "$lib/assets/heroLarge.jpg";
 
   import FeatureCard from "$lib/components/pages/main/featureCard.svelte";
   import Modals from "$lib/components/modals.svelte";
   import GetCert from "$lib/components/modals/getCert.svelte";
+  import { onMount } from "svelte";
+  import { getUsersCount } from "$lib/api/requests/stats";
 
-  import "$lib/api_variables";
+  let usersCount = $state("...");
 
+  // Modals
   let isGetCertModalShown: boolean = $state(false);
 
+  // Buttons event listeners
   const dismissModal = () => {
     isGetCertModalShown = false;
   };
+
+  // API
+  onMount(() => {
+    getUsersCount({
+      onSuccess: (data) => {
+          usersCount = data.count + "";
+      },
+      onError: (codeError, message, data) => {
+        console.error(codeError, message);
+      },
+      onFatal: (error) => {
+        console.error(error);
+      }
+    });
+  });
 </script>
 
 <svelte:head>
@@ -54,7 +73,7 @@
     <p class="mb-2">АПУ єдина в своєму роді і має багато ключових переваг. Ось деякі з них:</p>
     <div class="w-full flex flex-col sm:flex-row gap-2">
       <FeatureCard title="⏳ Швидко" text="Отримуйте сертифікат менше ніж за 5 хвилин." />
-      <FeatureCard title="💽 Велика база" text="Наша база вже має 0 зареєстрованих пупсіків!" />
+      <FeatureCard title="💽 Велика база" text={`Наша база вже має ${usersCount} зареєстрованих пупсіків!`} />
       <FeatureCard title="🔒 Надійно" text="Дані з бази зникнуть лише якщо станеться щось погане!" />
     </div>
   </section>

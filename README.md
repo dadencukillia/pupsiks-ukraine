@@ -1,6 +1,6 @@
 # Currently in pre-public state
 ## To-Do:
-- [ ] Make API backend endpoints
+- [x] Make API backend endpoints
 - - [x] Get certificate endpoint
 - - [x] Stats endpoint
 - - [x] Email confirmation code sending endpoint (+redis)
