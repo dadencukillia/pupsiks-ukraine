@@ -7,8 +7,8 @@
 - - [x] Create certificate endpoint
 - - [x] Remove certificate endpoint
 - - [x] Forgot certificate endpoint
-- [ ] Connect frontend and backend
-- [ ] Make skeleton
+- [x] Connect frontend and backend
+- [x] Make skeleton
 - [ ] Separate components on svelte files
 - [ ] Turn backend and frontend into Docker services
 - [ ] Make .env disappear (.gitignore magic)

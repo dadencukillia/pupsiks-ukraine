@@ -4,17 +4,14 @@ export type CallbacksSet<T> = {
   onFatal: (error: string) => void,
 };
 
-export const emptyRequest = async <T>(
-  uri: string, 
-  method: "GET"|"DELETE",
+const handleResponse = async <T>(
+  fetchPromise: Promise<Response>,
   callbacks: CallbacksSet<T>
 ) => {
-  return fetch(uri, {
-    method: method,
-  }).then(async resp => {
+  return fetchPromise.then(async resp => {
     const json = await resp.json();
 
-    if (Math.floor(resp.status / 100) === 2) {
+    if (resp.ok) {
       callbacks.onSuccess(json);
     } else {
       const data = JSON.parse(JSON.stringify(json));
@@ -30,6 +27,18 @@ export const emptyRequest = async <T>(
   }).catch(err => {
     callbacks.onFatal(err.toString());
   });
+};
+
+export const emptyRequest = async <T>(
+  uri: string, 
+  method: "GET"|"DELETE",
+  callbacks: CallbacksSet<T>
+) => {
+  const promise = fetch(uri, {
+    method: method,
+  });
+
+  return handleResponse(promise, callbacks);
 }
 
 export const jsonRequest = async <T>(
@@ -38,29 +47,13 @@ export const jsonRequest = async <T>(
   body: any, 
   callbacks: CallbacksSet<T>
 ) => {
-  return fetch(uri, {
+  const promise = fetch(uri, {
     method: method,
     body: JSON.stringify(body),
     headers: {
       "Content-Type": "application/json",
     },
-  }).then(async resp => {
-    const json = await resp.json();
-
-    if (Math.floor(resp.status / 100) === 2) {
-      callbacks.onSuccess(json);
-    } else {
-      const data = JSON.parse(JSON.stringify(json));
-      delete data["code_error"];
-      delete data["message"];
-
-      callbacks.onError(
-        json["code_error"]!,
-        json["message"]!,
-        data
-      );
-    }
-  }).catch(err => {
-    callbacks.onFatal(err.toString());
   });
+
+  return handleResponse(promise, callbacks);
 }

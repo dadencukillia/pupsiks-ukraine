@@ -10,7 +10,7 @@ pub enum Errors {
         endpoints: Option<&'static [(&'static str, &'static str)]>
     },
 
-    #[display("Wrong request: invalid {what_invalid}")]
+    #[display("Bad request: invalid {what_invalid}")]
     BadRequest {
         what_invalid: &'static str
     },

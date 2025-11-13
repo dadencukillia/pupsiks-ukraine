@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ERROR_ALREADY_EXISTS, ERROR_BAD_REQUEST, ERROR_EMAIL_RATE_LIMIT, ERROR_INTERNAL_SERVER_ERROR, ERROR_INVALID_CODE, ERROR_IP_RATE_LIMIT, ERROR_TRIES_OUT } from "$lib/api/configs";
+  import { EMAIL_CODE_PATTERN } from "$lib/api/regexPatterns";
   import { createCert, forgotCert } from "$lib/api/requests/cert_crud";
   import { sendCodeCertCreation } from "$lib/api/requests/code_confirmation";
   import Loader from "$lib/components/loader.svelte";
@@ -27,10 +28,9 @@
     AlreadyExists: 8,
     SentForgotEmail: 9,
     FatalError: 10,
-    EmailRateLimit: 11,
-    IPRateLimit: 12,
-    TriesOut: 13,
-    ForgotRateLimit: 14
+    CodeRateLimit: 11,
+    TriesOut: 12,
+    ForgotRateLimit: 13
   };
 
   let autofocusInputs: Array<HTMLInputElement|null> = $state([]);
@@ -39,7 +39,7 @@
 
   let emailConfirmationToken = "";
   let timerSeconds: number = $state(0);
-  let timerInterval: number|undefined = undefined;
+  let timerDecreaseInterval: number|undefined = undefined;
 
   $effect(() => {
     const input: HTMLInputElement|null = autofocusInputs[step];
@@ -63,8 +63,7 @@
     steps[StateEnum.AlreadyExists] = -1;
     steps[StateEnum.SentForgotEmail] = -1;
     steps[StateEnum.FatalError] = -1;
-    steps[StateEnum.EmailRateLimit] = 3;
-    steps[StateEnum.IPRateLimit] = 3;
+    steps[StateEnum.CodeRateLimit] = 3;
     steps[StateEnum.TriesOut] = 3;
     steps[StateEnum.ForgotRateLimit] = -1;
 
@@ -106,34 +105,30 @@
       onError: (codeError, message, data) => {
         console.error(codeError, message);
 
-        const currentTimestamp = Math.ceil(Date.now() / 1000);
-        let rateTimestamp = 0;
+        const setRateLimitInterval = (rateTimestamp: number) => {
+          clearInterval(timerDecreaseInterval);
 
-        const setRateLimitInterval = () => {
-          clearInterval(timerInterval);
-
-          timerInterval = setInterval(() => {
+          timerDecreaseInterval = setInterval(() => {
             const currentTimestamp = Math.ceil(Date.now() / 1000);
             timerSeconds = rateTimestamp - currentTimestamp;
 
             if (timerSeconds < 0) {
               currentState = StateEnum.EnteringTitle;
               step = stepByState();
-              clearInterval(timerInterval);
+              clearInterval(timerDecreaseInterval);
             }
           }, 1000);
         };
 
-        if (codeError === ERROR_EMAIL_RATE_LIMIT) {
-          currentState = StateEnum.EmailRateLimit;
-          rateTimestamp = data["timestamp"];
+        if (
+          codeError === ERROR_IP_RATE_LIMIT || 
+          codeError === ERROR_EMAIL_RATE_LIMIT
+        ) {
+          currentState = StateEnum.CodeRateLimit;
+          const currentTimestamp = Math.ceil(Date.now() / 1000);
+          let rateTimestamp = data["timestamp"];
           timerSeconds = rateTimestamp - currentTimestamp;
-          setRateLimitInterval();
-        } else if (codeError === ERROR_IP_RATE_LIMIT) {
-          currentState = StateEnum.IPRateLimit;
-          rateTimestamp = data["timestamp"];
-          timerSeconds = rateTimestamp - currentTimestamp;
-          setRateLimitInterval();
+          setRateLimitInterval(rateTimestamp);
         } else if (codeError === ERROR_ALREADY_EXISTS) {
           currentState = StateEnum.AlreadyExists;
         } else if (codeError === ERROR_BAD_REQUEST) {
@@ -176,20 +171,20 @@
         } else if (codeError === ERROR_TRIES_OUT) {
           currentState = StateEnum.TriesOut;
 
-          clearInterval(timerInterval);
+          clearInterval(timerDecreaseInterval);
 
           const currentTimestamp = Math.ceil(Date.now() / 1000);
           const timerTimestamp = data["timestamp"];
           timerSeconds = timerTimestamp - currentTimestamp;
 
-          timerInterval = setInterval(() => {
+          timerDecreaseInterval = setInterval(() => {
             const currentTimestamp = Math.ceil(Date.now() / 1000);
             timerSeconds = timerTimestamp - currentTimestamp;
 
             if (timerSeconds < 0) {
               currentState = StateEnum.EnteringTitle;
               step = stepByState();
-              clearInterval(timerInterval);
+              clearInterval(timerDecreaseInterval);
             }
           }, 1000);
         } else if (codeError === ERROR_BAD_REQUEST) {
@@ -216,20 +211,18 @@
       onError: (codeError, message, data) => {
         console.error(codeError, message);
 
-        const currentTimestamp = Math.ceil(Date.now() / 1000);
-        let rateTimestamp = 0;
 
-        const setRateLimitInterval = () => {
-          clearInterval(timerInterval);
+        const setRateLimitInterval = (rateTimestamp: number) => {
+          clearInterval(timerDecreaseInterval);
 
-          timerInterval = setInterval(() => {
+          timerDecreaseInterval = setInterval(() => {
             const currentTimestamp = Math.ceil(Date.now() / 1000);
             timerSeconds = rateTimestamp - currentTimestamp;
 
             if (timerSeconds < 0) {
               currentState = StateEnum.AlreadyExists;
               step = stepByState();
-              clearInterval(timerInterval);
+              clearInterval(timerDecreaseInterval);
             }
           }, 1000);
         };
@@ -239,9 +232,10 @@
           codeError === ERROR_IP_RATE_LIMIT
         ) {
           currentState = StateEnum.ForgotRateLimit;
-          rateTimestamp = data["timestamp"];
+          const currentTimestamp = Math.ceil(Date.now() / 1000);
+          let rateTimestamp = data["timestamp"];
           timerSeconds = rateTimestamp - currentTimestamp;
-          setRateLimitInterval();
+          setRateLimitInterval(rateTimestamp);
         } else if (codeError === ERROR_BAD_REQUEST) {
           currentState = StateEnum.FatalError;
         } else if (codeError === ERROR_INTERNAL_SERVER_ERROR) {
@@ -259,7 +253,7 @@
 
   onMount(() => {
     return () => {
-      clearInterval(timerInterval);
+      clearInterval(timerDecreaseInterval);
     };
   });
 </script>
@@ -315,7 +309,7 @@
     <h2 class="mb-1 font-bold text-white">Введіть код з пошти</h2>
     <p class="mb-2 block max-w-[500px] text-white text-xs italic">Код потрібен, щоб підтвердити належність пошти.</p>
     <form onsubmit={e => {e.preventDefault();submitCode();}}>
-      <input class="input mb-2" type="text" placeholder="AAA111BBB" required minlength="9" maxlength="9" bind:this={autofocusInputs[3]} bind:value={code}>
+      <input class="input mb-2 uppercase" type="text" placeholder="AAA111BBB" required minlength="9" maxlength="9" pattern={EMAIL_CODE_PATTERN} bind:this={autofocusInputs[3]} bind:value={code}>
       <div class="flex flex-row">
         <button class="button-primary text-gray-200" type="button" onclick={ back }>Назад</button>
         <button class="button" type="submit">Отримати сертифікат</button>
@@ -326,8 +320,8 @@
     <p class="mb-2 block max-w-[500px] text-white text-xs italic">Сертифікат було створено!</p>
     <a class="button w-fit" href={"/cert/" + createdId}>Поглянути</a>
   {:else if currentState === StateEnum.WrongCode}
-    <h2 class="mb-1 font-bold text-white">Неправильний код!</h2>
-    <p class="mb-2 block max-w-[500px] text-white text-xs italic">Будьте обережні, у Вас обмежена кількість спроб.</p>
+    <h2 class="mb-1 font-bold text-white">Хибний код!</h2>
+    <p class="mb-2 block max-w-[500px] text-white text-xs italic">Будьте обачні, у Вас обмежена кількість спроб.</p>
     <button class="button-primary text-gray-200" type="button" onclick={ back }>Назад</button>
   {:else if currentState === StateEnum.AlreadyExists}
     <h2 class="mb-1 font-bold text-white">Вже зайнято!</h2>
@@ -340,7 +334,7 @@
   {:else if currentState === StateEnum.FatalError}
     <h2 class="mb-1 font-bold text-white">Невідома помилка</h2>
     <p class="mb-2 block max-w-[500px] text-white text-xs italic">Перезапустіть сторінку і повторіть спробу пізніше.</p>
-  {:else if currentState === StateEnum.EmailRateLimit || currentState === StateEnum.IPRateLimit}
+  {:else if currentState === StateEnum.CodeRateLimit}
     <h2 class="mb-1 font-bold text-white">Почекайте, щоб відправити код знову!</h2>
     <p class="mb-2 text-white">{ durationFormat(timerSeconds) }</p>
   {:else if currentState === StateEnum.TriesOut}
