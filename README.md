@@ -9,7 +9,7 @@
 - - [x] Forgot certificate endpoint
 - [x] Connect frontend and backend
 - [x] Make skeleton
-- [ ] Separate components on svelte files
+- [x] Separate components on svelte files
 - [ ] Turn backend and frontend into Docker services
 - [ ] Make .env disappear (.gitignore magic)
 - [ ] Refactor the code, add comments
