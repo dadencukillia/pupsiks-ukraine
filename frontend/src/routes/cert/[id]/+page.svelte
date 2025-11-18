@@ -5,10 +5,9 @@
   import { onMount } from "svelte";
   import { getCert } from "$lib/api/requests/cert_crud.js";
   import Skeleton from "$lib/components/pages/certInfo/skeleton.svelte";
-  import { ERROR_BAD_REQUEST, ERROR_RESOURCE_NOT_FOUND } from "$lib/api/configs.js";
   import ErrorCard from "$lib/components/pages/certInfo/errorCard.svelte";
   import CertCard from "$lib/components/pages/certInfo/certCard.svelte";
-    import Sidebar from "$lib/components/pages/certInfo/sidebar.svelte";
+  import Sidebar from "$lib/components/pages/certInfo/sidebar.svelte";
 
   const {
     data
@@ -48,21 +47,13 @@
           title: data.title
         }
       },
-      onError: (codeError, message, data) => {
-        console.error(codeError, message);
-
-        if (codeError === ERROR_RESOURCE_NOT_FOUND) {
-          errorText = "Сертифікат не знайдено";
-        } else if (codeError === ERROR_BAD_REQUEST) {
-          errorText = "Неправильний серійний код";
-        } else {
-          errorText = "Невідома помилка";
-        }
-      },
-      onFatal: (error) => {
-        console.error(error);
-
-        errorText = "Помилка з'єднання";
+      onError: (matcher, _message, _data) => {
+        matcher.match({
+          RESOURCE_NOT_FOUND: () => { errorText = "Сертифікат не знайдено" },
+          BAD_REQUEST: () => { errorText = "Неправильний серійний номер" },
+          FATAL_ERROR: () => { errorText = "Помилка з'єднання" },
+          default: () => { errorText = "Невідома помилка" }
+        });
       }
     });
   });

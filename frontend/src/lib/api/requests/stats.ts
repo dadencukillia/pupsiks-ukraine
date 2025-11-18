@@ -7,5 +7,8 @@ type GetUsersCountResponse = {
 };
 
 export const getUsersCount = (
-  callbacks: CallbacksSet<GetUsersCountResponse>
+  callbacks: CallbacksSet<GetUsersCountResponse, [
+  "FATAL_ERROR",
+  "INTERNAL_SERVER_ERROR"
+]>
 ) => emptyRequest(API_STATS_USERS_COUNT, "GET", callbacks);

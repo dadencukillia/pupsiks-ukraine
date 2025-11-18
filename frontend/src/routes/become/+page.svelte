@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { ERROR_ALREADY_EXISTS, ERROR_EMAIL_RATE_LIMIT, ERROR_INVALID_CODE, ERROR_IP_RATE_LIMIT, ERROR_TRIES_OUT } from "$lib/api/configs";
   import { createCert, forgotCert } from "$lib/api/requests/cert_crud";
   import { sendCodeCertCreation } from "$lib/api/requests/code_confirmation";
   import Loader from "$lib/components/loader.svelte";
@@ -16,9 +15,13 @@
   import SuccessForgotState from "$lib/components/pages/become/states/successForgotState.svelte";
   import TriesOutState from "$lib/components/pages/become/states/triesOutState.svelte";
   import WrongCodeState from "$lib/components/pages/become/states/wrongCodeState.svelte";
-  import { FiniteStateMachine, type StatesRouter } from "$lib/utils/finiteStateMachine.svelte";
-  import { onMount } from "svelte";
+  import { Timer } from "$lib/utils/reactiveTimer.svelte";
+  import { onDestroy} from "svelte";
+  import { FiniteStateMachine, type StatesRouter } from "svelte-state-machine";
   import { slide } from "svelte/transition";
+
+  // Timer
+  const timer = new Timer();
 
   // FSM
   const FSM = new FiniteStateMachine(
@@ -59,7 +62,7 @@
       [FSM.enum.EnteringCode,       () => 3],
       [FSM.enum.CheckingCodeLoader, () => 3],
       [FSM.enum.Success,            () => -1],
-      [FSM.enum.WrongCode,          () => -1],
+      [FSM.enum.WrongCode,          () => 3],
       [FSM.enum.AlreadyExists,      () => -1],
       [FSM.enum.SentForgotEmail,    () => -1],
       [FSM.enum.FatalError,         () => -1],
@@ -71,31 +74,24 @@
   };
 
   // States
-  const steps = 4;
-  let step = $state<number>(0);
+  const maxSteps: number = 4;
+  let step: number = $derived(stepByState());
 
-  let email: string = $state<string>("");
-  let name: string = $state<string>("");
-  let title: string = $state<string>("");
-  let code = $state<string>("");
+  let email: string = $state("");
+  let name: string = $state("");
+  let title: string = $state("");
+  let code: string = $state("");
 
   let autofocusInputs: Array<HTMLInputElement|null> = $state([]);
 
   let createdId: string = $state("");
-  let emailConfirmationToken = "";
-
-  let timerSeconds: number = $state(0);
-  let timerDecreaseInterval: number|undefined = undefined;
+  let emailConfirmationToken: string = "";
 
   $effect(() => {
     const input: HTMLInputElement|null = autofocusInputs[step];
     if (input) {
       input.focus();
     }
-  });
-
-  FSM.subscribeStateChanges((_fsm, _prevState, _newState) => {
-    step = stepByState();
   });
 
   // Buttons event handlers
@@ -119,42 +115,24 @@
         emailConfirmationToken = data.token;
         FSM.state = FSM.enum.EnteringCode;
       },
-      onError: (codeError, message, data) => {
-        console.error(codeError, message);
+      onError: (matcher, _message, data) => {
+        const onRateLimit = () => {
+          FSM.state = FSM.enum.ForgotRateLimit;
 
-        const setRateLimitInterval = (rateTimestamp: number) => {
-          clearInterval(timerDecreaseInterval);
+          timer.onEnd = _ => {
+            FSM.state = FSM.enum.EnteringTitle;
+          };
 
-          timerDecreaseInterval = setInterval(() => {
-            const currentTimestamp = Math.ceil(Date.now() / 1000);
-            timerSeconds = rateTimestamp - currentTimestamp;
-
-            if (timerSeconds < 0) {
-              clearInterval(timerDecreaseInterval);
-              FSM.state = FSM.enum.EnteringTitle;
-            }
-          }, 1000);
+          timer.runTimestampSeconds(data["timestamp"] as number);
         };
 
-        if (
-          codeError === ERROR_IP_RATE_LIMIT || 
-          codeError === ERROR_EMAIL_RATE_LIMIT
-        ) {
-          FSM.state = FSM.enum.CodeRateLimit;
-          const currentTimestamp = Math.ceil(Date.now() / 1000);
-          let rateTimestamp = data["timestamp"];
-          timerSeconds = rateTimestamp - currentTimestamp;
-          setRateLimitInterval(rateTimestamp);
-        } else if (codeError === ERROR_ALREADY_EXISTS) {
-          FSM.state = FSM.enum.AlreadyExists;
-        } else {
-          FSM.state = FSM.enum.FatalError;
-        }
-      },
-      onFatal: (error) => {
-        console.error(error);
-        FSM.state = FSM.enum.FatalError;
-      },
+        matcher.match({
+          EMAIL_RATE_LIMIT: onRateLimit,
+          IP_RATE_LIMIT: onRateLimit,
+          ALREADY_EXISTS: () => { FSM.state = FSM.enum.AlreadyExists },
+          default: () => { FSM.state = FSM.enum.FatalError }
+        });
+      }
     });
   };
 
@@ -172,93 +150,57 @@
         FSM.state = FSM.enum.Success;
         createdId = data.id + "";
       },
-      onError: (codeError, message, data) => {
-        console.error(codeError, message);
+      onError: (matcher, _message, data) => {
+        matcher.match({
+          INVALID_CODE: () => { FSM.state = FSM.enum.WrongCode },
+          ALREADY_EXISTS: () => { FSM.state = FSM.enum.AlreadyExists },
+          TRIES_OUT: () => { 
+            FSM.state = FSM.enum.TriesOut;
 
-        if (codeError === ERROR_INVALID_CODE) {
-          FSM.state = FSM.enum.WrongCode;
-        } else if (codeError === ERROR_ALREADY_EXISTS) {
-          FSM.state = FSM.enum.AlreadyExists;
-        } else if (codeError === ERROR_TRIES_OUT) {
-          FSM.state = FSM.enum.TriesOut;
-
-          clearInterval(timerDecreaseInterval);
-
-          const currentTimestamp = Math.ceil(Date.now() / 1000);
-          const timerTimestamp = data["timestamp"];
-          timerSeconds = timerTimestamp - currentTimestamp;
-
-          timerDecreaseInterval = setInterval(() => {
-            const currentTimestamp = Math.ceil(Date.now() / 1000);
-            timerSeconds = timerTimestamp - currentTimestamp;
-
-            if (timerSeconds < 0) {
+            timer.onEnd = _ => {
               FSM.state = FSM.enum.EnteringTitle;
-              clearInterval(timerDecreaseInterval);
             }
-          }, 1000);
-        } else {
-          FSM.state = FSM.enum.FatalError;
-        }
-      },
-      onFatal: (error) => {
-        console.error(error);
-        FSM.state = FSM.enum.FatalError;
+
+            timer.runTimestampSeconds(data["timestamp"] as number);
+          },
+          default: () => { FSM.state = FSM.enum.FatalError }
+        });
       }
     });
   };
 
   const goToForgotCert = async () => {
     FSM.state = FSM.enum.SendingEmailLoader;
-    step = -1;
 
     await forgotCert(email, {
       onSuccess: (_data) => {
         FSM.state = FSM.enum.SentForgotEmail;
       },
-      onError: (codeError, message, data) => {
-        console.error(codeError, message);
+      onError: (matcher, _message, data) => {
+        const onRateLimit = () => {
+          FSM.state = FSM.enum.ForgotRateLimit;
 
+          timer.onEnd = _ => {
+            FSM.state = FSM.enum.AlreadyExists;
+          };
 
-        const setRateLimitInterval = (rateTimestamp: number) => {
-          clearInterval(timerDecreaseInterval);
-
-          timerDecreaseInterval = setInterval(() => {
-            const currentTimestamp = Math.ceil(Date.now() / 1000);
-            timerSeconds = rateTimestamp - currentTimestamp;
-
-            if (timerSeconds < 0) {
-              FSM.state = FSM.enum.AlreadyExists;
-              clearInterval(timerDecreaseInterval);
-            }
-          }, 1000);
+          timer.runTimestampSeconds(data["timestamp"] as number);
         };
 
-        if (
-          codeError === ERROR_EMAIL_RATE_LIMIT ||
-          codeError === ERROR_IP_RATE_LIMIT
-        ) {
-          FSM.state = FSM.enum.ForgotRateLimit;
-          const currentTimestamp = Math.ceil(Date.now() / 1000);
-          let rateTimestamp = data["timestamp"];
-          timerSeconds = rateTimestamp - currentTimestamp;
-          setRateLimitInterval(rateTimestamp);
-        } else {
-          FSM.state = FSM.enum.FatalError;
-        }
+        matcher.match({
+          EMAIL_RATE_LIMIT: onRateLimit,
+          IP_RATE_LIMIT: onRateLimit,
+          default: () => {
+            FSM.state = FSM.enum.FatalError;
+          }
+        });
       },
-      onFatal: (error) => {
-        console.error(error);
-        FSM.state = FSM.enum.FatalError;
-      }
     });
   };
 
-  onMount(() => {
-    return () => {
-      clearInterval(timerDecreaseInterval);
-    };
-  });
+  onDestroy(() => {
+    timer.stop(false);
+  })
 </script>
 
 <svelte:head>
@@ -266,33 +208,33 @@
 </svelte:head>
 
 <main class="sm:px-20 px-3 pb-12 w-full bg-brand-primary" transition:slide>
-  <Progressbar step={ step } maxSteps={ steps } />
+  <Progressbar step={ step } maxSteps={ maxSteps } />
 
-  {#if FSM.state === FSM.enum.EnteringEmail}
+  {#if FSM.check.EnteringEmail()}
     <EnteringEmailState goNext={ submitEmail } bind:input={ autofocusInputs[0] } bind:emailValue={ email } />
-  {:else if FSM.state === FSM.enum.EnteringName}
+  {:else if FSM.check.EnteringName()}
     <EnteringNameState goNext={ submitName } goBack={ back } bind:input={ autofocusInputs[1] } bind:nameValue={ name } />
-  {:else if FSM.state === FSM.enum.EnteringTitle}
+  {:else if FSM.check.EnteringTitle()}
     <EnteringTitleState goNext={ submitTitle } goBack={ back } bind:input={ autofocusInputs[2] } bind:titleValue={ title } />
-  {:else if FSM.state === FSM.enum.SendingEmailLoader || FSM.state === FSM.enum.CheckingCodeLoader}
+  {:else if FSM.check.SendingEmailLoader() || FSM.check.CheckingCodeLoader()}
     <Loader />
-  {:else if FSM.state === FSM.enum.EnteringCode}
+  {:else if FSM.check.EnteringCode()}
     <EnteringCodeState goNext={ submitCode } goBack={ back } bind:input={ autofocusInputs[3] } bind:codeValue={ code } />
-  {:else if FSM.state === FSM.enum.Success}
+  {:else if FSM.check.Success()}
     <SuccessCreateState createdId={ createdId } />
-  {:else if FSM.state === FSM.enum.WrongCode}
+  {:else if FSM.check.WrongCode()}
     <WrongCodeState back={ back } />
-  {:else if FSM.state === FSM.enum.AlreadyExists}
+  {:else if FSM.check.AlreadyExists()}
     <AlreadyExistsState goToForgotCert={ goToForgotCert } />
-  {:else if FSM.state === FSM.enum.SentForgotEmail}
+  {:else if FSM.check.SentForgotEmail()}
     <SuccessForgotState />
-  {:else if FSM.state === FSM.enum.FatalError}
+  {:else if FSM.check.FatalError()}
     <FatalErrorState errorTitle="Невідома помилка!" />
-  {:else if FSM.state === FSM.enum.CodeRateLimit}
-    <CodeRateLimitState timerSeconds={ timerSeconds } />
-  {:else if FSM.state === FSM.enum.TriesOut}
-    <TriesOutState timerSeconds={ timerSeconds } />
-  {:else if FSM.state === FSM.enum.ForgotRateLimit}
-    <ForgotRateLimitState timerSeconds={ timerSeconds } />
+  {:else if FSM.check.CodeRateLimit()}
+    <CodeRateLimitState timerSeconds={ timer.remainSeconds } />
+  {:else if FSM.check.TriesOut()}
+    <TriesOutState timerSeconds={ timer.remainSeconds } />
+  {:else if FSM.check.ForgotRateLimit()}
+    <ForgotRateLimitState timerSeconds={ timer.remainSeconds } />
   {/if}
 </main>

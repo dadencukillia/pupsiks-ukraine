@@ -10,7 +10,15 @@ type SendCodeResponse = {
 // Send code creation certificate
 export const sendCodeCertCreation = (
   email: string,
-  callbacks: CallbacksSet<SendCodeResponse>
+  callbacks: CallbacksSet<SendCodeResponse, [
+  "FATAL_ERROR",
+  "BAD_REQUEST",
+  "INTERNAL_SERVER_ERROR",
+  "ALREADY_EXISTS",
+  "INVALID_EMAIL",
+  "IP_RATE_LIMIT",
+  "EMAIL_RATE_LIMIT"
+]>
 ) => jsonRequest(API_SEND_CODE, "POST", { 
   purpose: { 
     type: "create"
@@ -23,7 +31,14 @@ export const sendCodeCertCreation = (
 export const sendCodeCertDeletion = (
   email: string,
   certId: string,
-  callbacks: CallbacksSet<SendCodeResponse>
+  callbacks: CallbacksSet<SendCodeResponse, [
+  "FATAL_ERROR",
+  "BAD_REQUEST",
+  "INTERNAL_SERVER_ERROR",
+  "INVALID_EMAIL",
+  "IP_RATE_LIMIT",
+  "EMAIL_RATE_LIMIT"
+]>
 ) => jsonRequest(API_SEND_CODE, "POST", { 
   purpose: { 
     type: "delete",

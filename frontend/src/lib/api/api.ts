@@ -1,12 +1,13 @@
-export type CallbacksSet<T> = {
-  onSuccess: (data: T) => void,
-  onError: (codeError: string, message: string, data: any) => void,
-  onFatal: (error: string) => void,
+import { APIError, errors, ErrorsMatch, type ErrorKeys } from "./errors";
+
+export type CallbacksSet<JsonResult, PossibleErrors extends ErrorKeys[]> = {
+  onSuccess: (data: JsonResult) => void,
+  onError: (matcher: ErrorsMatch<PossibleErrors>, message: string, data: Record<string, unknown>) => void,
 };
 
-const handleResponse = async <T>(
+const handleResponse = async <JsonResult, PossibleErrors extends ErrorKeys[]>(
   fetchPromise: Promise<Response>,
-  callbacks: CallbacksSet<T>
+  callbacks: CallbacksSet<JsonResult, PossibleErrors>
 ) => {
   return fetchPromise.then(async resp => {
     const json = await resp.json();
@@ -14,25 +15,31 @@ const handleResponse = async <T>(
     if (resp.ok) {
       callbacks.onSuccess(json);
     } else {
-      const data = JSON.parse(JSON.stringify(json));
-      delete data["code_error"];
-      delete data["message"];
+      const {code_error, message, ...data} = json;
+      console.error(code_error, message);
 
       callbacks.onError(
-        json["code_error"]!,
-        json["message"]!,
+        new ErrorsMatch<PossibleErrors>(new APIError(code_error??"" as string)),
+        message??"" as string,
         data
       );
     }
   }).catch(err => {
-    callbacks.onFatal(err.toString());
+    const errorText = err instanceof Error? err.message : String(err);
+    console.error(errors.FATAL_ERROR.code, errorText);
+
+    callbacks.onError(
+        new ErrorsMatch<PossibleErrors>(errors.FATAL_ERROR),
+        errorText,
+        {}
+      );
   });
 };
 
-export const emptyRequest = async <T>(
+export const emptyRequest = async <JsonResult, PossibleErrors extends ErrorKeys[]>(
   uri: string, 
   method: "GET"|"DELETE",
-  callbacks: CallbacksSet<T>
+  callbacks: CallbacksSet<JsonResult, PossibleErrors>
 ) => {
   const promise = fetch(uri, {
     method: method,
@@ -41,11 +48,11 @@ export const emptyRequest = async <T>(
   return handleResponse(promise, callbacks);
 }
 
-export const jsonRequest = async <T>(
+export const jsonRequest = async <JsonResult, PossibleErrors extends ErrorKeys[]>(
   uri: string, 
   method: "POST"|"DELETE"|"PUT",
-  body: any, 
-  callbacks: CallbacksSet<T>
+  body: Record<string, any>,
+  callbacks: CallbacksSet<JsonResult, PossibleErrors>
 ) => {
   const promise = fetch(uri, {
     method: method,

@@ -24,12 +24,7 @@
       onSuccess: (data) => {
           usersCount = data.count + "";
       },
-      onError: (codeError, message, _data) => {
-        console.error(codeError, message);
-      },
-      onFatal: (error) => {
-        console.error(error);
-      }
+      onError: (_matcher, _message, _data) => {},
     });
   });
 </script>
