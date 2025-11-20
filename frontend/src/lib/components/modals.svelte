@@ -1,4 +1,10 @@
 <script lang="ts">
+  /**
+   * @packageDocumentation
+   * 
+   * A reusable Svelte component for displaying a modal overlay or backdrop.
+   */
+
   const {
     children = () => {},
     show = false,

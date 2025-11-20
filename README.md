@@ -11,10 +11,14 @@
 - [x] Make skeleton
 - [x] Separate components on svelte files
 - [ ] Turn backend and frontend into Docker services
-- [ ] Make .env disappear (.gitignore magic)
+- - [ ] Backend
+- - [x] Frontend
+- [x] Make .env disappear (.gitignore magic)
 - [ ] Refactor the code, add comments
+- - [ ] Backend
+- - [x] Frontend
 - [ ] Make a great README.md
-- [ ] Remove all commits
+- ~[ ] Remove all commits~
 - [ ] Publish the project
 
 # Association pupsiks of Ukraine

@@ -121,7 +121,7 @@
 
 <div class="w-full bg-brand-primary p-3">
   {#if FSM.check.ApprovingDeletion()}
-    <div class="flex flex-row items-center gap-2">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-2">
       <h1 class="flex-1 font-unbounded text-white">Ви дійсно хочете видалити сертифікат?</h1>
       <div class="flex flex-row gap-2">
         <button class="button-primary" onclick={ approveDeletion }>Так</button>
@@ -131,9 +131,9 @@
   {:else if FSM.check.EnteringEmail()}
     <div class="flex flex-col gap-2">
       <h1 class="font-unbounded text-white">Введіть вашу електронну пошту</h1>
-      <form class="flex flex-row gap-2" onsubmit={e => {e.preventDefault();submitEmail();}}>
-        <input class="input" type="email" placeholder="me@example.com" required bind:value={email}>
-        <button class="button-primary" type="submit">Відправити код</button>
+      <form class="flex flex-col sm:flex-row gap-2" onsubmit={ e => { e.preventDefault(); submitEmail(); } }>
+        <input class="input w-full sm:w-auto" type="email" placeholder="me@example.com" required bind:value={email}>
+        <button class="button-primary w-full sm:w-auto" type="submit">Відправити код</button>
       </form>
     </div>
   {:else if FSM.check.SendingEmailLoader() || FSM.check.CheckingCodeLoader()}
@@ -141,16 +141,18 @@
   {:else if FSM.check.EnteringCode()}
     <div class="flex flex-col gap-2">
       <h1 class="font-unbounded text-white">Введіть код з пошти</h1>
-      <form class="flex flex-row gap-2" onsubmit={e => {e.preventDefault();submitCode();}}>
+      <form class="flex flex-col sm:flex-row gap-2" onsubmit={e => {e.preventDefault();submitCode();}}>
         <input class="input uppercase" type="text" placeholder="AAA111BBB" required minlength="9" maxlength="9" pattern={EMAIL_CODE_PATTERN} bind:value={code}>
         <button class="button-primary" type="submit">Видалити сертифікат</button>
       </form>
     </div>
   {:else if FSM.check.Success()}
-    <h1 class="font-unbounded text-white">Успішно видалено!</h1>
-    <p class="text-white">Перенаправлення через ({ timer.remainSeconds } с.)</p>
+    <div class="flex flex-col gap-2">
+      <h1 class="font-unbounded text-white">Успішно видалено!</h1>
+      <p class="text-white">Перенаправлення через ({ timer.remainSeconds } с.)</p>
+    </div>
   {:else if FSM.check.WrongEmail()}
-    <div class="flex flex-row gap-2">
+    <div class="flex flex-col sm:flex-row gap-2">
       <div class="flex-1 flex-col">
         <h1 class="font-unbounded text-white">Отакої!</h1>
         <p class="text-white">Сертифікат не належить пошті яку Ви ввели!</p>
@@ -160,14 +162,12 @@
       </div>
     </div>
   {:else if FSM.check.WrongCode()}
-    <div class="flex flex-row gap-2">
+    <div class="flex flex-col sm:flex-row gap-2">
       <div class="flex-1 flex-col">
         <h1 class="font-unbounded text-white">Хибний код!</h1>
         <p class="text-white">Будьте обачні, у Вас обмежена кількість спроб.</p>
       </div>
-      <div class="flex flex-row items-center">
-        <button class="button" onclick={ () => { FSM.state = FSM.enum.EnteringCode; } }>Назад</button>
-      </div>
+      <button class="button" onclick={ () => { FSM.state = FSM.enum.EnteringCode; } }>Назад</button>
     </div>
   {:else if FSM.check.CodeRateLimit()}
     <div class="flex flex-col gap-2">

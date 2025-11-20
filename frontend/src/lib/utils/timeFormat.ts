@@ -1,3 +1,11 @@
+/**
+ * Converts a total number of seconds into a human-readable duration string,
+ * displaying the two largest relevant time units (e.g., "1 д 5 год" or "4 хв 30 с").
+ *
+ * @param seconds - The total duration in seconds.
+ * @returns The formatted duration string, localized (in Ukrainian) with two units,
+ * or "0 с" if the input is zero or negative.
+ */
 export const durationFormat = (seconds: number) => {
   const daysWord = " д";
   const hoursWord = " год";

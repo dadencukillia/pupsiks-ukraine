@@ -1,15 +1,13 @@
-const connectUrl = (left: string, right: string): string => {
-  return (left.endsWith("/") ? left.substring(0, left.length - 1) : left) + "/" + (right.startsWith("/") ? right.substring(1) : right);
-};
+import { joinURL, joinURLs } from "../utils/joinURL";
 
-export const API_HOST = "http://127.0.0.1:8080/api/v1";
+export const API_HOST: string = import.meta.env.VITE_API_URL;
 
 // Certificate CRUD URLs
-export const API_CREATE_CERT = connectUrl(API_HOST, "/cert");
-export const API_GET_CERT = (certId: string) => connectUrl(connectUrl(API_HOST, "/cert"), certId);
-export const API_DELETE_CERT = connectUrl(API_HOST, "/cert");
-export const API_FORGOT_CERT = connectUrl(API_HOST, "/cert/forgot");
-export const API_SEND_CODE = connectUrl(API_HOST, "/send_code");
+export const API_CREATE_CERT = joinURL(API_HOST, "/cert");
+export const API_GET_CERT = (certId: string) => joinURLs(API_HOST, "/cert", certId);
+export const API_DELETE_CERT = joinURL(API_HOST, "/cert");
+export const API_FORGOT_CERT = joinURL(API_HOST, "/cert/forgot");
+export const API_SEND_CODE = joinURL(API_HOST, "/send_code");
 
 // Statistics
-export const API_STATS_USERS_COUNT = connectUrl(API_HOST, "/stats/users_count");
+export const API_STATS_USERS_COUNT = joinURL(API_HOST, "/stats/users_count");
