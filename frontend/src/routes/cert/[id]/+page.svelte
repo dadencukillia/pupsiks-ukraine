@@ -31,7 +31,7 @@
 
   // Buttons event handlers
   const shareTelegramHandler = () => {
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent("Я офіційно став пупсіком! Ось мій сертифікат ⬆️")}`, "_blank")?.focus();
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent("Я офіційно став(ла) пупсіком! Ось мій сертифікат ⬆️")}`, "_blank")?.focus();
   };
 
   const deleteCertHandler = () => {
