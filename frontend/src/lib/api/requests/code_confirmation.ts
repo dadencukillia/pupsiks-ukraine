@@ -34,6 +34,7 @@ export const sendCodeCertCreation = async (
   "FATAL_ERROR",
   "BAD_REQUEST",
   "INTERNAL_SERVER_ERROR",
+  "RESOURCE_NOT_FOUND",
   "ALREADY_EXISTS",
   "INVALID_EMAIL",
   "IP_RATE_LIMIT",

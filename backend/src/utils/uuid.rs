@@ -1,4 +1,4 @@
-use sea_orm::prelude::Uuid;
+use uuid::Uuid;
 use short_uuid::ShortUuid;
 
 pub fn get_uuid(id: &str) -> Option<Uuid> {

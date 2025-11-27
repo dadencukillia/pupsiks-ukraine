@@ -1,16 +1,10 @@
-use std::{sync::Arc, time::Duration};
-
-use actix_cors::Cors;
-use actix_web::{middleware::Logger, web, App, HttpServer};
+use std::sync::Arc;
+use actix_web::{App, HttpServer, middleware::Logger};
 use env_logger::Env;
-use fred::prelude::*;
-use sea_orm::{Database, DatabaseConnection};
-use crate::models::cert;
 
 mod configs;
+mod connections;
 mod api_v1;
-mod models;
-mod types;
 mod utils;
 
 #[actix_web::main]
@@ -19,37 +13,18 @@ async fn main() -> std::io::Result<()> {
         Env::default().default_filter_or("info")
     );
 
-    let db: DatabaseConnection = Database::connect(configs::get_db_url()).await.unwrap();
-    db.get_schema_builder()
-        .register(cert::Entity)
-        .sync(&db)
-        .await.unwrap();
+    let db = connections::get_database_connection().await.unwrap();
+    let redis = connections::get_redis_client().await.unwrap();
 
-    let redis = Builder::from_config(configs::get_redis_config())
-        .with_connection_config(|config| {
-            config.connection_timeout = Duration::from_secs(5);
-            config.tcp = TcpConfig {
-                nodelay: Some(true),
-                ..Default::default()
-            };
-        })
-        .set_policy(ReconnectPolicy::new_constant(0, 5))
-        .build().unwrap();
-    redis.init().await.unwrap();
-
-    let redis_clone = Arc::new(redis);
+    let db_arc = Arc::new(db);
+    let redis_arc = Arc::new(redis);
 
     HttpServer::new(move || {
-        let logger = Logger::default();
-        let cors = Cors::permissive();
+        let logger_middleware = Logger::default();
 
         App::new()
-            .wrap(logger)
-            .wrap(cors)
-            .app_data(web::Data::new(db.clone()))
-            .app_data(web::Data::new(redis_clone.clone()))
-            .service(api_v1::api_v1_scope())
-
+            .wrap(logger_middleware)
+            .service(api_v1::api_v1_scope(db_arc.clone(), redis_arc.clone()))
     })
         .bind(("0.0.0.0", 8080))?
         .run()

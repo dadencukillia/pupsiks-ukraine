@@ -117,7 +117,7 @@
       },
       onError: (matcher, _message, data) => {
         const onRateLimit = () => {
-          FSM.state = FSM.enum.ForgotRateLimit;
+          FSM.state = FSM.enum.CodeRateLimit;
 
           timer.onEnd = _ => {
             FSM.state = FSM.enum.EnteringTitle;

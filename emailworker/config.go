@@ -11,7 +11,7 @@ func GetRedisAddress() string {
 }
 
 func GetRedisQueueKey() string {
-	return os.Getenv("EMAIL_QUEUE")
+	return "email_jobs"
 }
 
 func GetWorkersCount() uint {

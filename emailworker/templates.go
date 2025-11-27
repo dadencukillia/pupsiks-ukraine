@@ -27,6 +27,6 @@ func Template(name string, replacements map[string]string) (TemplateResult, erro
 
 	return TemplateResult{
 		Subject: subject,
-		Body: body,
+		Body:    body,
 	}, nil
 }

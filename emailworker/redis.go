@@ -13,9 +13,9 @@ func ConnectRedis() *redis.Client {
 	redisAddr := GetRedisAddress()
 
 	rdb := redis.NewClient(&redis.Options{
-			Addr:     redisAddr,
-			Password: "",
-			DB:       0,
+		Addr:     redisAddr,
+		Password: "",
+		DB:       0,
 	})
 
 	for {
@@ -38,7 +38,7 @@ func ConnectRedis() *redis.Client {
 func GetQueueEmailTask(conn *redis.Client) (*EmailTask, error) {
 	emailElementsResult := conn.BRPop(
 		context.Background(),
-		10 * time.Second,
+		10*time.Second,
 		GetRedisQueueKey(),
 	)
 

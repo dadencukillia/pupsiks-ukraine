@@ -3,7 +3,9 @@ use std::{fmt::{Debug, Display}};
 use log::error;
 
 pub trait ResultLogger<T, E> {
+    #[allow(unused)]
     fn log_on_error(self) -> Self;
+    #[allow(unused)]
     fn log_with_place_on_error(self, place: &'static str) -> Self;
 }
 
