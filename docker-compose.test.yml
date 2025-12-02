@@ -1,40 +1,20 @@
 services:
-  nginx:
-    image: "nginx:1.29.3"
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      SERVER_NAME: "127.0.0.1"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - backend
-      - frontend
-
   backend:
-    build: ./backend
-    restart: always
+    build:
+      context: backend
+      dockerfile: Dockerfile.test
     environment:
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
+      RUST_LOG: debug
     depends_on:
       redis:
         condition: service_healthy
       db:
         condition: service_healthy
 
-  frontend:
-    build: 
-      context: frontend
-      args:
-        VITE_API_URL: "/api/v1"
-    restart: always
-
   emailworker:
     build: ./emailworker
-    restart: always
     environment:
       SMTP_SERVER: ${SMTP_SERVER}
       SMTP_PORT: ${SMTP_PORT}
@@ -47,13 +27,10 @@ services:
 
   db:
     image: "postgres:16"
-    restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: pupsiks
-    volumes:
-      - dbdata:/var/lib/postgresql:z
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d pupsiks"]
       interval: 5s
@@ -62,9 +39,6 @@ services:
 
   redis:
     image: "redis:8.2.2-alpine"
-    restart: always
-    volumes:
-      - redisdata:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -72,6 +46,9 @@ services:
       retries: 5
       start_period: 5s
 
-volumes:
-  dbdata:
-  redisdata:
+  tests:
+    build: ./backend/tests
+    environment:
+      TEST_EMAIL: ${TEST_EMAIL}
+    depends_on:
+      - backend

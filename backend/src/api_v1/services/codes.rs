@@ -11,8 +11,12 @@ pub const EMAIL_TOKEN_SYMBOLS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklm
 
 /// Generates a random code in the 3 LETTERS + 3 NUMBERS + 3 LETTERS format
 pub fn generate_email_code() -> String {
+    #[cfg(feature = "testing")]
+    return "AAA123BBB".to_string();
+
     let mut rng = OsRng;
 
+    // Generates random characters string with the specified length and characters list
     let mut gen_from_dict = |dict: &[u8], length: usize| -> String {
         (0..length).map(|_| {
             let random_index = rng.gen_range(0..dict.len());

@@ -21,8 +21,8 @@
 - - [x] Backend
 - - [x] Frontend
 - [ ] Add developement mode
-- [ ] Add backend tests
-- [ ] CI/CD
+- [x] Add backend tests
+- [ ] CI/CD (not finished yet)
 - [ ] Make a great README.md
 - [ ] ~Remove all commits (hide my shame)~
 - [ ] Publish the project
