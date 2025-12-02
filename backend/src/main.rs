@@ -9,16 +9,19 @@ mod utils;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // Set-up logger
     env_logger::init_from_env(
         Env::default().default_filter_or("info")
     );
 
+    // Set-up PostgreSQL and Redis connection
     let db = connections::get_database_connection().await.unwrap();
     let redis = connections::get_redis_client().await.unwrap();
 
     let db_arc = Arc::new(db);
     let redis_arc = Arc::new(redis);
 
+    // Create and configurate Actix web server
     HttpServer::new(move || {
         let logger_middleware = Logger::default();
 

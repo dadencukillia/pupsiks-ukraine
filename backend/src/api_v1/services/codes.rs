@@ -9,6 +9,7 @@ pub const EMAIL_CODE_LETTERS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 pub const EMAIL_CODE_NUMBERS: &[u8] = b"0123456789";
 pub const EMAIL_TOKEN_SYMBOLS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
+/// Generates a random code in the 3 LETTERS + 3 NUMBERS + 3 LETTERS format
 pub fn generate_email_code() -> String {
     let mut rng = OsRng;
 
@@ -26,6 +27,7 @@ pub fn generate_email_code() -> String {
     )
 }
 
+/// Generates a random token in the 32 LETTERS format
 pub fn generate_code_token() -> String {
     let mut rng = OsRng;
 
@@ -35,6 +37,7 @@ pub fn generate_code_token() -> String {
     }).collect()
 }
 
+/// Checks if the code in the correct format
 pub fn validate_email_code(code: &str) -> Result<(), ValidationError> {
     if code.len() != 9 {
         return Err(ValidationError::new("too_short_email_code"));
@@ -66,6 +69,7 @@ pub fn validate_email_code(code: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
+/// Checks if the token in the correct format
 pub fn validate_email_token(token: &str) -> Result<(), ValidationError> {
     if token.len() != 32 {
         return Err(ValidationError::new("too_short_token"));
@@ -90,6 +94,7 @@ pub enum VerificationResult {
     UnknownError(Error)
 }
 
+/// Validates code and token, compares stored values with the user's ones
 pub async fn verify_email_code(
     redis: &RedisRepo,
     email: &str, token: &str, code: &str
@@ -148,6 +153,7 @@ pub async fn verify_email_code(
     }
 }
 
+/// Stores the code and all details about it in the storage to be ready for use for confirmation
 pub async fn save_code_in_storage(
     redis: &RedisRepo,
     email: &str, purpose: &str, generated_code: &str, generated_token: &str
@@ -164,6 +170,7 @@ pub async fn save_code_in_storage(
     Ok(Utc::now() + expire_time)
 }
 
+/// Removes the code from the storage to make it inaccessible for confirmation
 pub async fn remove_code_from_storage(
     redis: &RedisRepo,
     email: &str

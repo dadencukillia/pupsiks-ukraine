@@ -1,3 +1,4 @@
+/// Trims a string, removes all control characters, and collapses multiple spaces into a single space, resulting in a clean and standardized string
 pub fn smart_trim(input: &str) -> String {
     let trimmed_and_cleaned: String = input
         .trim()

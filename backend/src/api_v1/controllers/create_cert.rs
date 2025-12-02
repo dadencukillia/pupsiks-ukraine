@@ -37,7 +37,7 @@ pub async fn create_cert_endpoint(
 
     match body.log_with_place_on_error(place_name) {
         Ok(body_unclear) => {
-            // Cleaning and validating body
+            // Clean and validate the request body
             let body = body_unclear.trim();
 
             if body
@@ -47,7 +47,7 @@ pub async fn create_cert_endpoint(
                 return Err(Errors::BadRequest { what_invalid: "field values" });
             }
 
-            // Veryfing code
+            // Verify the code from request body
             let verification_result = codes::verify_email_code(
                 redis.as_ref(), 
                 &body.email,
@@ -58,22 +58,22 @@ pub async fn create_cert_endpoint(
             match verification_result {
                 VerificationResult::Ok { purpose } => {
                     if purpose != "create" {
-                        // When created code had another purpose
+                        // When created code has the wrong purpose
                         return Err(Errors::InvalidRoute { correct_route: "DELETE /api/v1/cert" });
                     }
 
-                    // Delete code from Redis
+                    // Delete code from the Redis storage
                     codes::remove_code_from_storage(redis.as_ref(), &body.email)
                         .await
                         .map_err(|_| Errors::InternalServer { what: "cache storage" })?;
 
-                    // Reset rate counter by email
+                    // Reset the rate counter by the email address
                     let _ = rate_limits::reset_rate_counter(
                         redis.as_ref(), 
                         "code", &body.email
                     ).await;
 
-                    // Creating and saving certificate to DB
+                    // Create and save certificate to the data base
                     let cert_uuid = Uuid::new_v4();
                     let creation_result = cert_repo.create_cert(CertModel {
                         id: cert_uuid.clone(),
@@ -92,13 +92,13 @@ pub async fn create_cert_endpoint(
                         }
                     };
 
-                    // Updating stats
+                    // Update the count of certificates in the Redis storage
                     let _ = redis.increase_by_one(
                         cache::get_key("stats:users_count"), 
                         Duration::days(1)
                     ).await;
 
-                    // Returning certificate data
+                    // Return the certificate data
                     Ok(web::Json(CertificateResponse::new(
                         &cert_uuid, 
                         body.name.to_string(), 
@@ -114,6 +114,8 @@ pub async fn create_cert_endpoint(
                         "token_tries", &body.token, 
                         5
                     ).await {
+                        // Invalid code, but there are some tries left
+
                         rate_limits::increate_rate_counter(
                             redis.as_ref(), 
                             "token_tries", &body.token, 
@@ -124,19 +126,24 @@ pub async fn create_cert_endpoint(
 
                         Err(Errors::InvalidCode)
                     } else {
+                        // Invalid code, but there is no tries left
+
                         let block_duration = Duration::minutes(15);
                         let block_timestamp = Utc::now() + block_duration;
 
+                        // Make the code inaccesible to confirm
                         let _ = codes::remove_code_from_storage(
                             &redis, &body.email
                         ).await;
 
+                        // Block the email address for the code sending
                         let _ = redis.set_value(
                             rate_limits::get_key("code", &body.email), 
                             10000, 
                             block_duration.clone(), true
                         ).await;
 
+                        // Remove the tries counter from the Redis storage
                         let _ = rate_limits::reset_rate_counter(
                             &redis,
                             "token_tries", &body.token

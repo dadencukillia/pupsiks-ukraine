@@ -2,12 +2,14 @@ use anyhow::Result;
 use chrono::{DateTime, Duration, Utc};
 use crate::api_v1::repos::RedisRepo;
 
+/// Turns a realm and rate key into the specialized Redis key
 pub fn get_key(
     realm: &str, key: &str
 ) -> String {
     format!("rate_limit:{}:{}", realm, key)
 }
 
+/// Returns the value of the rate counter
 pub async fn get_rate_counter(
     redis: &RedisRepo,
     realm: &str, key: &str
@@ -17,6 +19,7 @@ pub async fn get_rate_counter(
         .unwrap_or(0)
 }
 
+/// Increases the rate counter
 pub async fn increate_rate_counter(
     redis: &RedisRepo,
     realm: &str, key: &str, exp: Duration
@@ -24,6 +27,8 @@ pub async fn increate_rate_counter(
     redis.increase_by_one(get_key(realm, key), exp).await
 }
 
+/// Checks if the value of the rate counter is larger then a number
+/// Used to check if the rate limit hitted
 pub async fn check_rate_counter(
     redis: &RedisRepo,
     realm: &str, key: &str, limit: u64
@@ -31,6 +36,7 @@ pub async fn check_rate_counter(
     get_rate_counter(redis, realm, key).await < limit
 }
 
+/// Returns the time and UTC expiration time to the rate counter reset
 pub async fn get_rate_time(
     redis: &RedisRepo,
     realm: &str, key: &str
@@ -38,6 +44,7 @@ pub async fn get_rate_time(
     redis.get_ttl(get_key(realm, key)).await
 }
 
+/// Resets the rate counter
 pub async fn reset_rate_counter(
     redis: &RedisRepo,
     realm: &str, key: &str

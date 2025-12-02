@@ -37,6 +37,7 @@ impl CertRepo {
         }
     }
 
+    /// Saves the certificate instance to the data base
     pub async fn create_cert(&self, cert: CertModel) -> Result<Uuid, CreationError> {
         let model_to_insert = cert::ActiveModel {
             id: Set(cert.id),
@@ -62,6 +63,7 @@ impl CertRepo {
         }
     }
 
+    /// Returns a certificate by the ID
     pub async fn find_cert_by_id(&self, id: Uuid) -> Result<Option<CertModel>> {
         let search_result = cert::Entity::find_by_id(id)
             .limit(1)
@@ -81,6 +83,7 @@ impl CertRepo {
         }
     }
 
+    /// Returns a certificate by the email address
     pub async fn find_cert_by_email(&self, email: String) -> Result<Option<CertModel>> {
         let search_result = cert::Entity::find_by_email(email.to_string())
             .limit(1)
@@ -100,6 +103,8 @@ impl CertRepo {
         }
     }
 
+    /// Removes a certificate by the ID
+    /// Returns 1 if the certificate was removed and 0 if the certificate wasn't
     pub async fn remove_cert_by_id(&self, id: Uuid) -> Result<u64> {
         Ok(
             cert::Entity::delete_by_id(id)
@@ -110,6 +115,8 @@ impl CertRepo {
         )
     }
 
+    /// Removes a certificate by the email address
+    /// Returns 1 if the certificate was removed and 0 if the certificate wasn't
     pub async fn remove_cert_by_email(&self, email: String) -> Result<u64> {
         Ok(
             cert::Entity::delete(cert::ActiveModel {
@@ -123,6 +130,8 @@ impl CertRepo {
         )
     }
 
+    /// Removes a certificate by the ID and email address
+    /// Returns 1 if the certificate was removed and 0 if the certificate wasn't
     pub async fn remove_cert_by_id_and_email(&self, id: Uuid, email: String) -> Result<u64> {
         Ok(
             cert::Entity::delete(cert::ActiveModel {
@@ -137,6 +146,7 @@ impl CertRepo {
         )
     }
 
+    /// Returns the total amount of certificates
     pub async fn count_all(&self) -> Result<u64> {
         let count: u64 = cert::Entity::find()
             .count(self.database.as_ref())

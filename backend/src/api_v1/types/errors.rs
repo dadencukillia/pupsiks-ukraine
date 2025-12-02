@@ -79,6 +79,7 @@ pub enum Errors {
 }
 
 impl Errors {
+    /// Generates and returns the JSON message error
     fn get_response_body(&self) -> BoxBody {
         match self {
             Self::PageNotFound { endpoints } => BoxBody::new(serde_json::to_string(&PageNotFoundErrorResponse::new(

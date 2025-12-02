@@ -28,6 +28,7 @@ impl RedisRepo {
         }
     }
 
+    /// Increases the value of the counter by 1
     pub async fn increase_by_one(&self, key: String, expire: Duration) -> Result<u64> {
         let pipeline = self.redis.multi();
 
@@ -56,6 +57,8 @@ impl RedisRepo {
         Ok(new_value)
     }
 
+    /// Increases the value of the counter by specified value
+    /// Set the negative value to decrease the counter value
     pub async fn increase_by(&self, key: String, value: i64, expire: Duration) -> Result<u64> {
         let pipeline = self.redis.multi();
 
@@ -84,6 +87,7 @@ impl RedisRepo {
         Ok(new_value)
     }
 
+    /// Returns the value of stored in the Redis storage variable
     pub async fn get_value<T: FromValue>(&self, key: String) -> Result<Option<T>> {
         Ok(
             self.redis.get::<Option<T>, String>(key)
@@ -92,6 +96,9 @@ impl RedisRepo {
         )
     }
 
+    /// Changes the value of the variable or create a variable with specified value
+    /// replace_expire = true will change the TTL if the variable already exists
+    /// replace_expire = false won't change the TTL if the variable already exists
     pub async fn set_value<T>(&self, key: String, value: T, expire: Duration, replace_expire: bool) -> Result<Option<()>> 
     where 
         T: TryInto<Value> + Send,
@@ -114,6 +121,10 @@ impl RedisRepo {
         Ok(a)
     }
 
+    /// Changes the value of the variable or create a variable with specified value
+    /// Returns the previous value of the variable if it already exists
+    /// replace_expire = true will change the TTL if the variable already exists
+    /// replace_expire = false won't change the TTL if the variable already exists
     pub async fn set_value_return_previous<T>(&self, key: String, value: T, expire: Duration, replace_expire: bool) -> Result<Option<T>> 
     where 
         T: TryInto<Value> + FromValue + Send,
@@ -136,6 +147,7 @@ impl RedisRepo {
         Ok(a)
     }
 
+    /// Removes the variable by the key from the Redis storage
     pub async fn delete_by_key(&self, key: String) -> Result<u64> {
         let count: u64 = self.redis
             .del(&key)
@@ -145,6 +157,7 @@ impl RedisRepo {
         Ok(count)
     }
 
+    /// Returns the time to left and UTC expiration time of the specified variable
     pub async fn get_ttl(&self, key: String) -> Result<(Duration, DateTime<Utc>)> {
         let timestamp_milli: i64 = self.redis
             .pexpire_time(key)
@@ -156,6 +169,7 @@ impl RedisRepo {
         Ok((timestamp - now, timestamp))
     }
 
+    /// Adds the object in a queue by the specified key
     pub async fn lpush<T>(&self, key: String, value: T) -> Result<u32>
     where 
         T: TryInto<Value> + Send,

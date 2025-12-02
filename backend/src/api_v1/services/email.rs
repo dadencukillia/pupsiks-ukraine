@@ -5,6 +5,7 @@ use crate::api_v1::{
     types::redis::EmailTask
 };
 
+/// Send a letter with the creation code on the specified email
 pub async fn send_create_code(
     redis: &RedisRepo,
     email: &str, code: &str
@@ -21,6 +22,7 @@ pub async fn send_create_code(
     Ok(())
 }
 
+/// Send a letter with the deletion code on the specified email
 pub async fn send_delete_code(
     redis: &RedisRepo,
     email: &str, code: &str
@@ -37,6 +39,7 @@ pub async fn send_delete_code(
     Ok(())
 }
 
+/// Send a letter with the certificate ID on the specified email
 pub async fn send_forgot_cert(
     redis: &RedisRepo,
     email: &str, cert_id: &str

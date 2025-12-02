@@ -17,8 +17,8 @@
 - [x] Refactor the code
 - - [x] Backend
 - - [x] Frontend
-- [ ] Add comments in the code
-- - [ ] Backend
+- [x] Add comments in the code
+- - [x] Backend
 - - [x] Frontend
 - [ ] Add developement mode
 - [ ] Add backend tests

@@ -22,6 +22,7 @@ pub async fn users_count_endpoint(
     cert_repo: web::Data<CertRepo>,
     redis: web::Data<RedisRepo>
 ) -> Result<web::Json<StatsUserCountResponse>, Errors> {
+    // Receive a cached users count
     let cache_key = "stats:users_count";
     let cache_option = cache::get_cache(redis.as_ref(), cache_key.to_string()).await;
 
@@ -31,10 +32,12 @@ pub async fn users_count_endpoint(
         ))
     }
 
+    // Receive the users count from the data base if not cached
     let count = cert_repo.count_all()
         .await
         .map_err(|_| Errors::InternalServer { what: "DB" })?;
 
+    // Cache the received users count
     let _ = cache::set_cache(
         redis.as_ref(), 
         &cache_key, 

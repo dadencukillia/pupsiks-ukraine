@@ -7,6 +7,7 @@ use crate::{
     configs
 };
 
+/// Estabilishes connection to the Redis server and returns a client Fred interface
 pub async fn get_redis_client() -> Result<Client> {
     let redis: Client = Builder::from_config(configs::get_redis_config())
         .with_connection_config(|config| {
@@ -22,6 +23,7 @@ pub async fn get_redis_client() -> Result<Client> {
     Ok(redis)
 }
 
+/// Estabilishes connection to the PostgreSQL server and returns a client SeaORM interface
 pub async fn get_database_connection() -> Result<DatabaseConnection> {
     let db: DatabaseConnection = Database::connect(configs::get_db_url()).await?;
     register_cert_in_db_schema(

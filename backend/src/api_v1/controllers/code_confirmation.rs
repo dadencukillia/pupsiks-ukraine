@@ -38,15 +38,16 @@ pub async fn send_code_endpoint(
 
     match body.log_with_place_on_error(place_name) {
         Ok(body_unclear) => {
+            // Clean and validate the request body
             let body = body_unclear.trim();
 
-            // Check if email address is correct
             if body.validate()
                 .log_with_place_on_error(place_name)
                 .is_err() {
                 return Err(Errors::BadRequest { what_invalid: "email field value" });
             }
 
+            // Receive user's IP
             let user_ip = match request.connection_info().realip_remote_addr() {
                 Some(ip) => ip.to_string(),
                 None => {
@@ -54,7 +55,7 @@ pub async fn send_code_endpoint(
                 },
             };
 
-            // Check rate limit by IP address
+            // Check rate limit by the IP address
             if !rate_limits::check_rate_counter(
                 redis.as_ref(), 
                 "code", &user_ip,
@@ -73,7 +74,7 @@ pub async fn send_code_endpoint(
                 })
             }
 
-            // Check rate limit by email address
+            // Check rate limit by the email address
             if !rate_limits::check_rate_counter(
                 redis.as_ref(), 
                 "code", &body.email,
@@ -92,7 +93,7 @@ pub async fn send_code_endpoint(
                 })
             }
 
-            // Check special cases
+            // Check special cases that depends on purposes
             match body.purpose {
                 SendCodePurposes::ConfirmCreation => {
                     let cert_to_check = cert_repo.find_cert_by_email(body.email.clone())
@@ -122,25 +123,25 @@ pub async fn send_code_endpoint(
                 }
             };
 
-            // Update rate limit by IP address
+            // Update rate limit by the IP address
             let _ = rate_limits::increate_rate_counter(
                 redis.as_ref(), 
                 "code", &user_ip, 
                 Duration::minutes(10)
             ).await;
 
-            // Update rate limit by email address
+            // Update rate limit by the email address
             let _ = rate_limits::increate_rate_counter(
                 redis.as_ref(), 
                 "code", &body.email, 
                 Duration::minutes(3)
             ).await;
 
-            // Generating code and token
+            // Generate code and token
             let email_code = codes::generate_email_code();
             let email_token = codes::generate_code_token();
 
-            // Saving email code and token into storage for a day
+            // Save email code and token into the Redis storage for a day
             let expire_time = codes::save_code_in_storage(
                 redis.as_ref(), 
                 &body.email, 
@@ -150,7 +151,7 @@ pub async fn send_code_endpoint(
                 .await
                 .map_err(|_| Errors::InternalServer { what: "cache storage" })?;
 
-            // Adding email task into queue to be processed by a SMTP service
+            // Add email task into queue to be processed by a SMTP service
             match body.purpose {
                 SendCodePurposes::ConfirmCreation => {
                     email::send_create_code(

@@ -15,6 +15,7 @@ pub async fn get_cert_endpoint(
     path: web::Path<(String,)>,
     cert_repo: web::Data<CertRepo>
 ) -> Result<web::Json<CertificateResponse>, Errors> {
+    // Parse a UUID object from the request body
     let uuid = match get_uuid(&path.0) {
         Some(uuid) => uuid,
         None => {
@@ -22,11 +23,13 @@ pub async fn get_cert_endpoint(
         }
     };
 
+    // Receive a certificate by the parsed UUID
     let find_option = cert_repo.find_cert_by_id(uuid)
         .await
         .map_err(|_| Errors::InternalServer { what: "DB" })?;
 
     if let Some(certificate) = find_option {
+        // Return the certificate data
         Ok(web::Json(
             CertificateResponse::new(&uuid, certificate.name, certificate.title)
         ))

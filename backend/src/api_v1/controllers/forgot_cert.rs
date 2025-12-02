@@ -33,6 +33,7 @@ pub async fn forgot_cert_endpoint(
         Ok(unclear_body) => {
             let body = unclear_body.trim();
 
+            // Receive user's IP address
             let user_ip = match request.connection_info().realip_remote_addr() {
                 Some(ip) => ip.to_string(),
                 None => {
@@ -40,7 +41,7 @@ pub async fn forgot_cert_endpoint(
                 },
             };
 
-            // Check rate limit by IP address
+            // Check rate limit by the IP address
             if !rate_limits::check_rate_counter(
                 redis.as_ref(), 
                 "forgot", &user_ip,
@@ -59,7 +60,7 @@ pub async fn forgot_cert_endpoint(
                 })
             }
 
-            // Check rate limit by email address
+            // Check rate limit by the email address
             if !rate_limits::check_rate_counter(
                 redis.as_ref(), 
                 "forgot", &body.email,
@@ -78,20 +79,20 @@ pub async fn forgot_cert_endpoint(
                 })
             }
 
-            // Find cert
+            // Receive a certificate by the email address
             let find_option = cert_repo.find_cert_by_email(body.email.clone())
                 .await
                 .map_err(|_| Errors::InternalServer { what: "DB" })?;
 
             if let Some(certificate) = find_option {
-                // Update rate limit by IP address
+                // Update rate limit by the IP address
                 let _ = rate_limits::increate_rate_counter(
                     redis.as_ref(), 
                     "forgot", &user_ip, 
                     Duration::minutes(10)
                 ).await;
 
-                // Update rate limit by email address
+                // Update rate limit by the email address
                 let _ = rate_limits::increate_rate_counter(
                     redis.as_ref(), 
                     "forgot", &body.email, 

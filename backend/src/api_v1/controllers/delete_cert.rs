@@ -34,7 +34,7 @@ pub async fn delete_cert_endpoint(
 
     match body.log_with_place_on_error(place_name) {
         Ok(body_unclear) => {
-            // Cleaning and validating body
+            // Clean and validate the request body
             let body = body_unclear.trim();
 
             if body
@@ -44,7 +44,7 @@ pub async fn delete_cert_endpoint(
                 return Err(Errors::BadRequest { what_invalid: "field values" });
             }
 
-            // Veryfing code
+            // Verify the code from request body
             let verification_result = codes::verify_email_code(
                 redis.as_ref(), 
                 &body.email, 
@@ -55,22 +55,22 @@ pub async fn delete_cert_endpoint(
             match verification_result {
                 VerificationResult::Ok { purpose } => {
                     if purpose != "delete" {
-                        // When created code had another purpose
+                        // When created code has the wrong purpose
                         return Err(Errors::InvalidRoute { correct_route: "POST /api/v1/cert" });
                     }
 
-                    // Delete code from Redis
+                    // Delete code from the Redis storage
                     codes::remove_code_from_storage(redis.as_ref(), &body.email)
                         .await
                         .map_err(|_| Errors::InternalServer { what: "cache storage" })?;
 
-                    // Reset rate counter by email
+                    // Reset the rate counter by the email address
                     let _ = rate_limits::reset_rate_counter(
                         redis.as_ref(), 
                         "code", &body.email
                     ).await;
 
-                    // Get cert to remove
+                    // Receive a certificate by the email address
                     let cert_option = cert_repo.find_cert_by_email(body.email.clone())
                         .await
                         .map_err(|_| Errors::InternalServer { what: "DB" })?;
@@ -81,20 +81,23 @@ pub async fn delete_cert_endpoint(
 
                     let cert = cert_option.unwrap();
 
-                    // Execute delete operation
+                    // Execute deletion operation
                     let deletion_count = cert_repo.remove_cert_by_id_and_email(cert.id.clone(), body.email.clone())
                         .await
                         .map_err(|_| Errors::InternalServer { what: "DB" })?;
 
                     if deletion_count == 0 {
+                        // Wasn't removed
                         Err(Errors::ResourceNotFound { what: "certificate" })
                     } else {
+                        // Update the count of certificates in the Redis storage
                         let _ = redis.increase_by(
                             cache::get_key("stats:users_count"), 
                             -1, 
                             Duration::days(1)
                         ).await;
 
+                        // Return the removed certificate ID
                         Ok(web::Json(
                             CertIdResponse::new(&cert.id)
                         ))
@@ -109,6 +112,8 @@ pub async fn delete_cert_endpoint(
                         "token_tries", &body.token, 
                         5
                     ).await {
+                        // Invalid code, but there are some tries left
+
                         rate_limits::increate_rate_counter(
                             redis.as_ref(), 
                             "token_tries", &body.token, 
@@ -119,19 +124,24 @@ pub async fn delete_cert_endpoint(
 
                         Err(Errors::InvalidCode)
                     } else {
+                        // Invalid code, but there is no tries left
+
                         let block_duration = Duration::minutes(15);
                         let block_timestamp = Utc::now() + block_duration;
 
+                        // Make the code inaccesible to confirm
                         let _ = codes::remove_code_from_storage(
                             &redis, &body.email
                         ).await;
 
+                        // Block the email address for the code sending
                         let _ = redis.set_value(
                             rate_limits::get_key("code", &body.email), 
                             10000, 
                             block_duration.clone(), true
                         ).await;
 
+                        // Remove the tries counter from the Redis storage
                         let _ = rate_limits::reset_rate_counter(
                             &redis,
                             "token_tries", &body.token
