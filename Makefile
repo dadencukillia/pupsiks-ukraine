@@ -5,7 +5,7 @@ build_test:
 	docker compose -f docker-compose.test.yml build
 
 production:
-	docker compose up --build -d
+	docker compose up -d
 
 test: stop
 	docker compose -f docker-compose.test.yml up --build --attach tests --abort-on-container-failure --exit-code-from tests

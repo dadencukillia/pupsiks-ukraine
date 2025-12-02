@@ -15,6 +15,7 @@ services:
 
   backend:
     build: ./backend
+    image: pupsiks/backend:0.1.0
     restart: always
     environment:
       DB_USER: ${DB_USER}
@@ -30,10 +31,12 @@ services:
       context: frontend
       args:
         VITE_API_URL: "/api/v1"
+    image: pupsiks/frontend:0.1.0
     restart: always
 
   emailworker:
     build: ./emailworker
+    image: pupsiks/emailworker:0.1.0
     restart: always
     environment:
       SMTP_SERVER: ${SMTP_SERVER}

@@ -22,7 +22,7 @@
 - - [x] Frontend
 - [ ] Add developement mode
 - [x] Add backend tests
-- [ ] CI/CD (not finished yet)
+- [x] CI/CD
 - [ ] Make a great README.md
 - [ ] ~Remove all commits (hide my shame)~
 - [ ] Publish the project
