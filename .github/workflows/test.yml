@@ -18,6 +18,8 @@ jobs:
       SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
       TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+      SERVER_NAME: 127.0.0.1
+      SSL_OWNER_EMAIL: ""
 
     steps:
     - name: Checkout repository

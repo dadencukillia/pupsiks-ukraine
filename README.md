@@ -23,6 +23,7 @@
 - [ ] Add developement mode
 - [x] Add backend tests
 - [x] CI/CD
+- [x] HTTPS
 - [ ] Make a great README.md
 - [ ] ~Remove all commits (hide my shame)~
 - [ ] Publish the project

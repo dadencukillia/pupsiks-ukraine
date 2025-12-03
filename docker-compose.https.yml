@@ -1,0 +1,23 @@
+services:
+  nginx:
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.https.conf:/etc/nginx/templates/default.conf.template:ro
+      - httpswebroot:/var/www/html
+      - httpsletsencrypt:/etc/letsencrypt
+
+  certbot:
+    image: certbot/certbot
+    entrypoint: /bin/sh
+    environment:
+      SERVER_NAME: ${SERVER_NAME}
+      SSL_OWNER_EMAIL: ${SSL_OWNER_EMAIL}
+    volumes:
+      - httpsletsencrypt:/etc/letsencrypt
+      - httpswebroot:/var/www/html
+
+volumes:
+  httpswebroot:
+  httpsletsencrypt:
