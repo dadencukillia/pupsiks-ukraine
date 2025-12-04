@@ -1,13 +1,8 @@
 # Stage 1: Build the application
-FROM rust:1.91 AS builder
+FROM rust:1.91-alpine AS builder
 WORKDIR /app
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential \
-    libssl-dev \
-    pkg-config && \
-    rm -rf /var/lib/apt/lists/*
 COPY . .
+RUN apk add openssl-dev openssl-libs-static pkgconfig
 RUN --mount=type=cache,target=/app/target \
     --mount=type=cache,target=/usr/local/cargo/git/db \
     --mount=type=cache,target=/usr/local/cargo/registry \
@@ -15,7 +10,7 @@ RUN --mount=type=cache,target=/app/target \
     cp target/release/backend ./backend
 
 # Stage 2: Create the final runtime image
-FROM gcr.io/distroless/cc-debian12 AS runtime
+FROM alpine:3.22 AS runtime
 COPY --from=builder /app/backend /app/server
 EXPOSE 8080
-ENTRYPOINT ["/app/server"]
+CMD ["/app/server"]

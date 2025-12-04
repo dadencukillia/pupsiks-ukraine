@@ -14,7 +14,7 @@ production_https:
 	docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 
 test: stop
-	docker compose -f docker-compose.test.yml up --build --attach tests --abort-on-container-failure --exit-code-from tests
+	docker compose -f docker-compose.test.yml up --build --attach tests --abort-on-container-failure --exit-code-from tests --force-recreate
 	docker compose down
 
 stop:

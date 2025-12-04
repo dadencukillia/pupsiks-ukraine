@@ -6,6 +6,7 @@ mod configs;
 mod connections;
 mod api_v1;
 mod utils;
+mod healthcheck;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -27,6 +28,7 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .wrap(logger_middleware)
+            .service(healthcheck::healthcheck_resource(db_arc.clone(), redis_arc.clone()))
             .service(api_v1::api_v1_scope(db_arc.clone(), redis_arc.clone()))
     })
         .bind(("0.0.0.0", 8080))?

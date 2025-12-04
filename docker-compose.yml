@@ -9,8 +9,12 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/templates/default.conf.template:ro
     depends_on:
-      - backend
-      - frontend
+      backend:
+        condition: service_healthy
+        required: true
+      frontend:
+        condition: service_healthy
+        required: true
 
   backend:
     build: ./backend
@@ -24,6 +28,11 @@ services:
         condition: service_healthy
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:8080/healthcheck || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build: 
@@ -32,6 +41,11 @@ services:
         VITE_API_URL: "/api/v1"
     image: pupsiks/frontend:latest
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:3000/healthcheck.txt || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   emailworker:
     build: ./emailworker
@@ -55,7 +69,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: pupsiks
     volumes:
-      - dbdata:/var/lib/postgresql:z
+      - dbdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d pupsiks"]
       interval: 5s

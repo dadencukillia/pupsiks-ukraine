@@ -12,6 +12,11 @@ services:
         condition: service_healthy
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:8080/healthcheck || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   db:
     image: "postgres:16"
@@ -39,4 +44,6 @@ services:
     environment:
       TEST_EMAIL: ${TEST_EMAIL}
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+        required: true
