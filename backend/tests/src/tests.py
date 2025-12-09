@@ -21,6 +21,16 @@ def sleep():
 # =====
 
 
+def test_healthcheck():
+    """
+    Check GET /healthcheck
+    """
+
+    sleep()
+    res = requests.get(BASE_URL + "/healthcheck")
+    assert res.status_code == 200
+
+
 def test_stats_certs_count_empty():
     """
     Check GET /api/v1/stats/users_count when there is no certificates in data base

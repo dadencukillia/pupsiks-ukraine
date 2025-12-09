@@ -29,3 +29,6 @@ first_ssl_certs:
 renew_ssl_certs:
 	docker compose -f docker-compose.yml -f docker-compose.https.yml run --rm certbot -c "certbot renew -v --deploy-hook 'echo CERT_IS_UPDATES_CODE' | grep CERT_IS_UPDATES_CODE -q" && \
 		docker compose exec nginx sh -c "nginx -s reload"
+
+dev:
+	docker compose -f docker-compose.dev.yml up --build

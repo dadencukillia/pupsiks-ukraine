@@ -20,7 +20,7 @@
 - [x] Add comments in the code
 - - [x] Backend
 - - [x] Frontend
-- [ ] Add developement mode
+- [x] Add developement mode
 - [x] Add backend tests
 - [x] CI/CD
 - [x] HTTPS

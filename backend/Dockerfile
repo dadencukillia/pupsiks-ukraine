@@ -1,8 +1,8 @@
 # Stage 1: Build the application
 FROM rust:1.91-alpine AS builder
 WORKDIR /app
-COPY . .
 RUN apk add openssl-dev openssl-libs-static pkgconfig
+COPY . .
 RUN --mount=type=cache,target=/app/target \
     --mount=type=cache,target=/usr/local/cargo/git/db \
     --mount=type=cache,target=/usr/local/cargo/registry \

@@ -1,0 +1,85 @@
+services:
+  nginx:
+    image: "nginx:1.29.3"
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      ENV_SERVER_NAME: 127.0.0.1
+    volumes:
+      - ./nginx.conf:/etc/nginx/templates/default.conf.template:ro
+    depends_on:
+      - backend
+      - frontend
+
+  backend:
+    build: 
+      context: backend
+      dockerfile: Dockerfile.dev
+    image: pupsiks/backend:latest
+    restart: always
+    environment:
+      DB_USER: dev
+      DB_PASS: 12345678
+      RUST_LOG: debug
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: 
+      context: frontend
+      dockerfile: Dockerfile.dev
+      args:
+        VITE_API_URL: "/api/v1"
+    image: pupsiks/frontend:latest
+    restart: always
+    volumes:
+      - "./frontend:/app"
+
+  emailworker:
+    build: ./emailworker
+    image: pupsiks/emailworker:latest
+    restart: always
+    environment:
+      SMTP_SERVER: ${SMTP_SERVER}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_SENDER: ${SMTP_SENDER}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  db:
+    image: "postgres:16"
+    restart: always
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: 12345678
+      POSTGRES_DB: pupsiks
+    volumes:
+      - devdbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d pupsiks"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: "redis:8.2.2-alpine"
+    restart: always
+    volumes:
+      - devredisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  devdbdata:
+  devredisdata:
