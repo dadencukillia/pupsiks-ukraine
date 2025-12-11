@@ -4,7 +4,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.https.conf:/etc/nginx/templates/default.conf.template:ro
+      - ./nginx/nginx.https.conf:/etc/nginx/templates/default.conf.template:ro
       - httpswebroot:/var/www/html
       - httpsletsencrypt:/etc/letsencrypt
 

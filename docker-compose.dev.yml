@@ -7,7 +7,7 @@ services:
     environment:
       ENV_SERVER_NAME: 127.0.0.1
     volumes:
-      - ./nginx.conf:/etc/nginx/templates/default.conf.template:ro
+      - ./nginx/nginx.conf:/etc/nginx/templates/default.conf.template:ro
     depends_on:
       - backend
       - frontend
