@@ -1,7 +1,5 @@
 <script lang="ts">
-  import heroImgSm from "$lib/assets/heroSmall.jpg";
-  import heroImgMd from "$lib/assets/heroMedium.jpg";
-  import heroImgLg from "$lib/assets/heroLarge.jpg";
+  import heroImg from "$lib/assets/hero.jpg?enhanced&w=400;800;1200;1600;2000;2400&quality=40";
 
   const {
     showGetCertPopup
@@ -10,10 +8,8 @@
   } = $props();
 </script>
 
-<header 
-  style={`--h-sm:url(${JSON.stringify(heroImgSm)});--h-md:url(${JSON.stringify(heroImgMd)});--h-lg:url(${JSON.stringify(heroImgLg)});`}
-  class="h-[300px] mb-12 bg-center bg-cover rounded-xl"
->
+<header class="relative h-[300px] mb-12">
+  <enhanced:img src={ heroImg } alt="Hero Duck" class="absolute left-0 top-0 w-full h-full object-cover object-center rounded-xl -z-1" sizes="(min-width:640px) calc(100vw - 10rem), calc(100vw - 1.5rem)" />
   <div class="w-full h-full flex flex-col gap-2 justify-center items-center backdrop-blur-sm rounded-xl">
     <a class="button-primary flex flex-row items-center gap-1" href="/become">
       <span>Стати пупсіком вже сьогодні</span>
@@ -24,22 +20,3 @@
     <button class="button" onclick={ showGetCertPopup }>Перевірити сертифікат</button>
   </div>
 </header>
-
-
-<style>
-  header {
-    background-image: var(--h-sm);
-  }
-
-  @media (min-width: calc(640px + 100px)) {
-    header {
-      background-image: var(--h-md);
-    }
-  }
-
-  @media (min-width: calc(1920px + 100px)) {
-    header {
-      background-image: var(--h-lg);
-    }
-  }
-</style>
