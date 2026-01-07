@@ -31,15 +31,15 @@ type SendCodeResponse = {
 export const sendCodeCertCreation = async (
   email: string,
   callbacks: CallbacksSet<SendCodeResponse, [
-  "FATAL_ERROR",
-  "BAD_REQUEST",
-  "INTERNAL_SERVER_ERROR",
-  "RESOURCE_NOT_FOUND",
-  "ALREADY_EXISTS",
-  "INVALID_EMAIL",
-  "IP_RATE_LIMIT",
-  "EMAIL_RATE_LIMIT"
-]>
+    "FATAL_ERROR",
+    "BAD_REQUEST",
+    "INTERNAL_SERVER_ERROR",
+    "RESOURCE_NOT_FOUND",
+    "ALREADY_EXISTS",
+    "INVALID_EMAIL",
+    "IP_RATE_LIMIT",
+    "EMAIL_RATE_LIMIT"
+  ]>
 ) => jsonRequest(API_SEND_CODE, "POST", { 
   purpose: { 
     type: "create"
@@ -64,13 +64,13 @@ export const sendCodeCertDeletion = async (
   email: string,
   certId: string,
   callbacks: CallbacksSet<SendCodeResponse, [
-  "FATAL_ERROR",
-  "BAD_REQUEST",
-  "INTERNAL_SERVER_ERROR",
-  "INVALID_EMAIL",
-  "IP_RATE_LIMIT",
-  "EMAIL_RATE_LIMIT"
-]>
+    "FATAL_ERROR",
+    "BAD_REQUEST",
+    "INTERNAL_SERVER_ERROR",
+    "INVALID_EMAIL",
+    "IP_RATE_LIMIT",
+    "EMAIL_RATE_LIMIT"
+  ]>
 ) => jsonRequest(API_SEND_CODE, "POST", { 
   purpose: { 
     type: "delete",

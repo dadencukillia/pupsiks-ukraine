@@ -1,5 +1,5 @@
 <script lang="ts">
-  import favicon from '$lib/assets/logo.png?enhanced&w=40';
+  import favicon from '$lib/assets/logo.png?enhanced&w=40;60;80';
 </script>
 
 <div class="navbar p-3 mb-10 flex gap-2 items-center justify-center">

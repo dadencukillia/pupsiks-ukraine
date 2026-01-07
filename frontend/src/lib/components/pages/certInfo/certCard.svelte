@@ -1,5 +1,5 @@
 <script lang="ts">
-  import voidPantograph from "$lib/assets/void.jpg?enhanced&w=600;450;300;150;75";
+  import voidPantograph from "$lib/assets/void.jpg?enhanced&w=600;450;300;150;75&quality=50";
 
   const {
     certName,
@@ -15,7 +15,12 @@
 <div
   class="card relative flex flex-col md:flex-1 p-5 max-w-[600px] aspect-2/1 overflow-hidden rounded-xl"
 >
-  <enhanced:img src={ voidPantograph } alt="void pantograph" class="absolute left-0 top-0 w-full h-full object-center -z-1" sizes="(min-width:883px) 600px, (min-width:768px) 450px, (min-width: 640px) calc(100vw - 10rem), calc(100vw - 1.5rem)" />
+  <enhanced:img 
+    src={ voidPantograph } alt="void pantograph"
+    class="absolute left-0 top-0 w-full h-full object-center -z-1"
+    sizes="(min-width:883px) 600px, (min-width:768px) 450px, (min-width: 640px) calc(100vw - 10rem), calc(100vw - 1.5rem)"
+    fetchpriority="high"
+  />
   <div class="text-shadow-lg text-shadow-white truncate">
     <h1>Сертифікований пупсік</h1>
     <h1 class="font-unbounded font-bold overflow-hidden text-ellipsis">{ certName }</h1>

@@ -31,6 +31,10 @@
 
 <svelte:head>
   <title>Головна — Асоціація пупсіків України</title>
+  <meta name="description" content={ "Портал Всеукраїнської громадської організації \"Асоціація Пупсиків України\". Станьте пупсиками вже сьогодні!" } />
+  <meta property="og:title" content="Головна — Асоціація пупсіків України" />
+  <meta property="og:type" content="website" />
+  <meta name="keywords" content="пупсики, милота, реєстрація, сертифікати, база" />
 </svelte:head>
 
 <Modals show={ isGetCertModalShown } transparent={ false } onclick={ dismissModal }>

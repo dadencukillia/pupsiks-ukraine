@@ -23,6 +23,8 @@
 		"vite": "^7.0.4"
 	},
 	"dependencies": {
+		"@ethercorps/sveltekit-og": "^4.2.1",
+		"@fontsource/unbounded": "^5.2.8",
 		"@sveltejs/enhanced-img": "^0.9.2",
 		"svelte-state-machine": "^0.2.0"
 	}

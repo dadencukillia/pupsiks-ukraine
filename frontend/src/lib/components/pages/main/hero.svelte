@@ -9,7 +9,12 @@
 </script>
 
 <header class="relative h-[300px] mb-12">
-  <enhanced:img src={ heroImg } alt="Hero Duck" class="absolute left-0 top-0 w-full h-full object-cover object-center rounded-xl -z-1" sizes="(min-width:640px) calc(100vw - 10rem), calc(100vw - 1.5rem)" />
+  <enhanced:img
+    src={ heroImg } alt="Hero Duck"
+    class="absolute left-0 top-0 w-full h-full object-cover object-center rounded-xl -z-1"
+    sizes="(min-width:640px) calc(100vw - 10rem), calc(100vw - 1.5rem)"
+    fetchpriority="high" loading="eager"
+  />
   <div class="w-full h-full flex flex-col gap-2 justify-center items-center backdrop-blur-sm rounded-xl">
     <a class="button-primary flex flex-row items-center gap-1" href="/become">
       <span>Стати пупсіком вже сьогодні</span>

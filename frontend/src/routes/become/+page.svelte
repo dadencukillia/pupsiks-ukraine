@@ -205,6 +205,9 @@
 
 <svelte:head>
   <title>Отримати сертифікат — Асоціація пупсіків України</title>
+  <meta name="description" content={ "Станьте пупсиками вже зараз, заповнивши декілька полей!" } />
+  <meta property="og:title" content="Отримати сертифікат — Асоціація пупсіків України" />
+  <meta property="og:type" content="website" />
 </svelte:head>
 
 <main class="sm:px-20 px-3 pb-12 w-full bg-brand-primary" transition:slide>

@@ -32,8 +32,6 @@ services:
     build: 
       context: frontend
       dockerfile: Dockerfile.dev
-      args:
-        VITE_API_URL: "/api/v1"
     image: pupsiks/frontend:latest
     restart: always
     volumes:
