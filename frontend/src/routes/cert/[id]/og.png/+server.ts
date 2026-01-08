@@ -88,7 +88,8 @@ export const GET: RequestHandler = async ({ params, request, fetch }) => {
   return new Response(cachedImage[0], {
     status: 200,
     headers: {
-      "Content-Type": "image/png"
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=900"
     }
   });
 };
