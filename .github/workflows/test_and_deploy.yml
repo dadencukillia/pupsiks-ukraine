@@ -33,8 +33,9 @@ jobs:
     - name: Run tests
       run: make test
 
-  build_and_push:
+  build_and_push_frontend:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
     - name: Checkout repository
@@ -43,16 +44,69 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build and push production
-      run: |
-        make build_production_https &&
-        echo ${{ secrets.GH_TOKEN }} | docker login ghcr.io -u dadencukillia --password-stdin && \
-        docker push ghcr.io/dadencukillia/pupsiks:backend && \
-        docker push ghcr.io/dadencukillia/pupsiks:frontend && \
-        docker push ghcr.io/dadencukillia/pupsiks:emailworker
+    - name: Build production
+      run: docker compose build frontend
+
+    - name: Login to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GH_TOKEN }}
+
+    - name: Push production
+      run: docker push ghcr.io/dadencukillia/pupsiks:frontend
+
+  build_and_push_backend:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build production
+      run: docker compose build backend
+
+    - name: Login to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GH_TOKEN }}
+
+    - name: Push production
+      run: docker push ghcr.io/dadencukillia/pupsiks:backend
+
+  build_and_push_emailworker:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build production
+      run: docker compose build emailworker
+
+    - name: Login to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GH_TOKEN }}
+
+    - name: Push production
+      run: docker push ghcr.io/dadencukillia/pupsiks:emailworker
 
   deploy:
-    needs: [test, build_and_push]
+    needs: [test, build_and_push_frontend, build_and_push_backend, build_and_push_emailworker]
     runs-on: self-hosted
     environment: production
     concurrency: production
@@ -66,6 +120,7 @@ jobs:
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
       SERVER_NAME: ${{ vars.SERVER_NAME }}
       SSL_OWNER_EMAIL: ${{ vars.SSL_OWNER_EMAIL }}
+      PUPSIKS_CONTAINER_ENGINE: podman
 
     steps:
     - name: Checkout repository
@@ -85,8 +140,7 @@ jobs:
 
     - name: Runtime
       run: |
-        echo ${{ secrets.GH_TOKEN }} | docker login ghcr.io -u dadencukillia --password-stdin && \
         make production_https
 
     - name: Restart Nginx # After containers update Nginx is able to send 502 status code
-      run: docker compose exec nginx sh -c "nginx -s reload"
+      run: make restart_nginx

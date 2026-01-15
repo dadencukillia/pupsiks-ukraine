@@ -36,7 +36,9 @@ I also spent quite a bit of time setting up CI/CD and getting Certbot to work wi
 
 
 # 🪚 Development
-This project uses Docker and Docker Compose to run. It also includes Backend, Frontend, and a messaging service. Each of them is divided into corresponding folders.
+This project uses Docker and Docker Compose to run. It also includes Backend, Frontend, and a messaging service. Each of them is divided into corresponding folders. 
+
+P.S.: if you prefer **podman**. Just set the `PUPSIKS_CONTAINER_ENGINE` environment variable to the `podman` value. 
 
 ## Run on HTTP protocol
 You need to clone the repository with this command:

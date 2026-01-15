@@ -1,34 +1,41 @@
+.PHONY: build_production build_production_https build_test production production_https test stop logs first_ssl_certs renew_ssl_certs dev
+
+PUPSIKS_CONTAINER_ENGINE ?= docker # or "podman"
+
 build_production:
-	docker compose build
+	$(PUPSIKS_CONTAINER_ENGINE) compose build
 
 build_production_https:
-	docker compose -f docker-compose.yml -f docker-compose.https.yml build
+	$(PUPSIKS_CONTAINER_ENGINE) compose -f docker-compose.yml -f docker-compose.https.yml build
 
 build_test:
-	docker compose -f docker-compose.test.yml build
+	$(PUPSIKS_CONTAINER_ENGINE) compose -f docker-compose.test.yml build
 
 production:
-	docker compose up -d
+	$(PUPSIKS_CONTAINER_ENGINE) compose up -d
 
 production_https:
-	docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+	$(PUPSIKS_CONTAINER_ENGINE) compose -f docker-compose.yml -f docker-compose.https.yml up -d
 
 test: stop
-	docker compose -f docker-compose.test.yml up --build --attach tests --abort-on-container-failure --exit-code-from tests --force-recreate
-	docker compose down
+	$(PUPSIKS_CONTAINER_ENGINE) compose -f docker-compose.test.yml up --build --attach tests --abort-on-container-failure --exit-code-from tests --force-recreate
+	$(PUPSIKS_CONTAINER_ENGINE) compose down
 
 stop:
-	docker compose down
+	$(PUPSIKS_CONTAINER_ENGINE) compose down
 
 logs:
-	docker compose logs --follow
+	$(PUPSIKS_CONTAINER_ENGINE) compose logs --follow
 
 first_ssl_certs:
-	docker compose -f docker-compose.yml -f docker-compose.https.yml run -p "80:80" --rm certbot -c "certbot certonly --standalone -d \$$SERVER_NAME --non-interactive --agree-tos -m \$$SSL_OWNER_EMAIL"
+	$(PUPSIKS_CONTAINER_ENGINE) compose -f docker-compose.yml -f docker-compose.https.yml run -p "80:80" --rm certbot -c "certbot certonly --standalone -d \$$SERVER_NAME --non-interactive --agree-tos -m \$$SSL_OWNER_EMAIL"
 
 renew_ssl_certs:
-	docker compose -f docker-compose.yml -f docker-compose.https.yml run --rm certbot -c "certbot renew -v --deploy-hook 'echo CERT_IS_UPDATES_CODE' | grep CERT_IS_UPDATES_CODE -q" && \
-		docker compose exec nginx sh -c "nginx -s reload"
+	$(PUPSIKS_CONTAINER_ENGINE) compose -f docker-compose.yml -f docker-compose.https.yml run --rm certbot -c "certbot renew -v --deploy-hook 'echo CERT_IS_UPDATES_CODE' | grep CERT_IS_UPDATES_CODE -q" && \
+		$(MAKE) restart_nginx
 
 dev:
-	docker compose -f docker-compose.dev.yml up --build
+	$(PUPSIKS_CONTAINER_ENGINE) compose -f docker-compose.dev.yml up --build
+
+restart_nginx:
+	$(PUPSIKS_CONTAINER_ENGINE) compose exec nginx sh -c "nginx -s reload"
