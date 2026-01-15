@@ -48,9 +48,8 @@ Rename the `.env.example` file to `.env` and fill it in with your details (in yo
 
 Also, if you don't have a domain, you can specify `127.0.0.1` in the `SERVER_NAME` field for access from your device or WAN IP addresses for public access. This is important because Nginx is configured to redirect any users to the specified address if it is not located there.
 
-To start the website, type the following commands (you may need sudo)::
+To start the website, type the following command (you may need sudo):
 ```bash
-make build_production
 make production
 ```
 
@@ -71,9 +70,8 @@ If you have completed all the tasks, it is time to obtain your first SSL certifi
 make first_ssl_certs
 ```
 
-If everything goes smoothly, you now have SSL certificates! You can now start the main website services with the following commands (you may need sudo):
+If everything goes smoothly, you now have SSL certificates! You can now start the main website services with the following command (you may need sudo):
 ```bash
-make build_production_https
 make production_https
 ```
 

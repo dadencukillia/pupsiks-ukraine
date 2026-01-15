@@ -33,9 +33,8 @@ jobs:
     - name: Run tests
       run: make test
 
-  build:
+  build_and_push:
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
     - name: Checkout repository
@@ -44,35 +43,16 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build production
-      run: make build_production_https
-
-    - name: List images
-      id: save_built_images
+    - name: Build and push production
       run: |
-        sudo wget https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd64 -O /usr/bin/yq
-        sudo chmod +x /usr/bin/yq
-        images=$(yq '.services[] | select(.build) | .image' docker-compose.yml | xargs)
-        echo "BUILT_IMAGE_LIST=$images" >> $GITHUB_OUTPUT
-        echo "Built images: $images"
-
-    - name: Save all images as tar
-      run: |
-        mkdir -p docker-images
-        for img in ${{ steps.save_built_images.outputs.BUILT_IMAGE_LIST }}; do
-          echo "Saving $img"
-          docker save -o docker-images/$(echo $img | tr '/:' '_').tar $img
-        done
-
-
-    - name: Upload images artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: compose-images
-        path: docker-images/
+        make build_production_https &&
+        echo ${{ secrets.GH_TOKEN }} | docker login ghcr.io -u dadencukillia --password-stdin && \
+        docker push ghcr.io/dadencukillia/pupsiks:backend && \
+        docker push ghcr.io/dadencukillia/pupsiks:frontend && \
+        docker push ghcr.io/dadencukillia/pupsiks:emailworker
 
   deploy:
-    needs: [test, build]
+    needs: [test, build_and_push]
     runs-on: self-hosted
     environment: production
     concurrency: production
@@ -91,19 +71,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Download images
-      uses: actions/download-artifact@v4
-      with:
-        name: compose-images
-        path: docker-images
-
-    - name: Load all images
-      run: |
-        for f in docker-images/*.tar; do
-          echo "Loading $f"
-          docker load -i $f
-        done
-
     - name: Create .env file
       run: |
         echo "SERVER_NAME=${{ vars.SERVER_NAME }}" >> .env
@@ -117,4 +84,9 @@ jobs:
         echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> .env
 
     - name: Runtime
-      run: make production_https
+      run: |
+        echo ${{ secrets.GH_TOKEN }} | docker login ghcr.io -u dadencukillia --password-stdin && \
+        make production_https
+
+    - name: Restart Nginx # After containers update Nginx is able to send 502 status code
+      run: docker compose exec nginx sh -c "nginx -s reload"

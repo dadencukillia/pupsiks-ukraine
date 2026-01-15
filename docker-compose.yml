@@ -18,7 +18,7 @@ services:
 
   backend:
     build: ./backend
-    image: pupsiks/backend:latest
+    image: ghcr.io/dadencukillia/pupsiks:backend
     restart: always
     environment:
       DB_USER: ${DB_USER}
@@ -36,7 +36,7 @@ services:
 
   frontend:
     build: frontend
-    image: pupsiks/frontend:latest
+    image: ghcr.io/dadencukillia/pupsiks:frontend
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:3000/healthcheck.txt || exit 1"]
@@ -46,7 +46,7 @@ services:
 
   emailworker:
     build: ./emailworker
-    image: pupsiks/emailworker:latest
+    image: ghcr.io/dadencukillia/pupsiks:emailworker
     restart: always
     environment:
       SMTP_SERVER: ${SMTP_SERVER}

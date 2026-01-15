@@ -16,7 +16,6 @@ services:
     build: 
       context: backend
       dockerfile: Dockerfile.dev
-    image: pupsiks/backend:latest
     restart: always
     environment:
       DB_USER: dev
@@ -32,14 +31,12 @@ services:
     build: 
       context: frontend
       dockerfile: Dockerfile.dev
-    image: pupsiks/frontend:latest
     restart: always
     volumes:
       - "./frontend:/app"
 
   emailworker:
     build: ./emailworker
-    image: pupsiks/emailworker:latest
     restart: always
     environment:
       SMTP_SERVER: ${SMTP_SERVER}
